@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{pkgs, lib, ...}: {
   home.packages = with pkgs; [
     ghostty
     yazi
@@ -29,6 +29,9 @@
     oh-my-zsh = {
       enable = true;
       plugins = [ "git" "docker" "vi-mode" "kubectl" ];
+      extraConfig = ''
+        DISABLE_AUTO_TITLE="true"
+      '';
     };
 
     shellAliases = {
@@ -37,26 +40,27 @@
       zshconfig = "nvim ~/.zshrc";
     };
 
-    initExtraFirst = ''
-      # Powerlevel10k instant prompt
-      if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
-        source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
-      fi
-    '';
+    initContent = lib.mkMerge [
+      (lib.mkBefore ''
+        # Powerlevel10k instant prompt
+        if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+          source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+        fi
+      '')
+      ''
+        # Powerlevel10k theme
+        source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
 
-    initExtra = ''
-      # Powerlevel10k theme
-      source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
+        # Source p10k config
+        [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-      # Source p10k config
-      [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+        # Direnv
+        eval "$(direnv hook zsh)"
 
-      # Direnv
-      eval "$(direnv hook zsh)"
-
-      # Zoxide
-      eval "$(zoxide init zsh)"
-    '';
+        # Zoxide
+        eval "$(zoxide init zsh)"
+      ''
+    ];
   };
 
   home.file.".p10k.zsh".source = ./dotfiles/zsh/.p10k.zsh;
