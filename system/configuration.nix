@@ -55,8 +55,14 @@
     variant = "";
   };
 
+  # tailscale
+  services.tailscale.enable = true;
+
   # Enable CUPS to print documents.
   services.printing.enable = true;
+
+  # Passwordless sudo for wheel group
+  security.sudo.wheelNeedsPassword = false;
 
   # Enable sound with pipewire.
   services.pulseaudio.enable = false;
@@ -78,8 +84,12 @@
   # services.xserver.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.roborakesh = {
+  # Enable zsh system-wide
+  programs.zsh.enable = true;
+
+  users.users.jjmachan = {
     isNormalUser = true;
+    shell = pkgs.zsh;
     description = "robo-rakesh";
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
@@ -89,7 +99,7 @@
 
   # Enable automatic login for the user.
   services.displayManager.autoLogin.enable = true;
-  services.displayManager.autoLogin.user = "roborakesh";
+  services.displayManager.autoLogin.user = "jjmachan";
 
   # Workaround for GNOME autologin: https://github.com/NixOS/nixpkgs/issues/103746#issuecomment-945091229
   systemd.services."getty@tty1".enable = false;
@@ -116,7 +126,7 @@
   # List services that you want to enable:
 
   # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
+  services.openssh.enable = true;
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
@@ -139,5 +149,23 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.05"; # Did you read the comment?
+  # Suika — self-evolving AI agent in a MicroVM
+  services.suika = {
+    enable = true;
+    externalInterface = "wlp0s20f3";
+  };
+
+  # Prevent sleep/suspend on lid close — act as server
+  services.logind.settings.Login = {
+    HandleLidSwitch = "ignore";
+    HandleLidSwitchExternalPower = "ignore";
+    HandleLidSwitchDocked = "ignore";
+  };
+
+  # Disable suspend/hibernate entirely
+  systemd.targets.sleep.enable = false;
+  systemd.targets.suspend.enable = false;
+  systemd.targets.hibernate.enable = false;
+  systemd.targets.hybrid-sleep.enable = false;
 
 }
