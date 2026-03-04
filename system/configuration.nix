@@ -58,6 +58,9 @@
   # tailscale
   services.tailscale.enable = true;
 
+  # Docker
+  virtualisation.docker.enable = true;
+
   # Enable CUPS to print documents.
   services.printing.enable = true;
 
@@ -91,7 +94,7 @@
     isNormalUser = true;
     shell = pkgs.zsh;
     description = "robo-rakesh";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "docker" ];
     packages = with pkgs; [
     #  thunderbird
     ];
