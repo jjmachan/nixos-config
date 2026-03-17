@@ -1,14 +1,70 @@
 {pkgs, lib, ...}: {
   home.packages = with pkgs; [
-    ghostty
-    yazi
+    # terminal
+    ghostty        # gpu-accelerated terminal
+    yazi           # terminal file manager
+    lazygit        # terminal UI for git
+    neofetch       # system info display
+    nnn            # terminal file manager
+    claude-code    # AI coding assistant
+
+    # archives
+    zip
+    xz
+    unzip
+    p7zip
+
+    # utils
     git
-    ripgrep
-    fd
-    fzf
-    direnv
-    zoxide
-    lazygit
+    ripgrep        # recursively searches directories for a regex pattern
+    fd             # simple, fast alternative to find
+    fzf            # command-line fuzzy finder
+    direnv         # auto-load environment variables per directory
+    zoxide         # smarter cd command
+    jq             # command-line JSON processor
+    yq-go          # yaml processor
+    eza            # modern replacement for ls
+    tree           # display directories as trees
+    file           # determine file type
+    which          # locate a command
+    gnused         # GNU sed
+    gnutar         # GNU tar
+    gawk           # GNU awk
+    zstd           # fast compression algorithm
+    gnupg          # GNU privacy guard
+
+    # networking tools
+    mtr            # network diagnostic tool
+    iperf3         # network bandwidth measurement
+    dnsutils       # dig + nslookup
+    ldns           # drill command (dig replacement)
+    aria2          # multi-protocol download utility
+    socat          # multipurpose relay (netcat replacement)
+    nmap           # network discovery and security auditing
+    ipcalc         # IPv4/v6 address calculator
+
+    # monitoring
+    btop           # resource monitor (htop replacement)
+    iotop          # IO monitoring
+    iftop          # network monitoring
+    strace         # system call monitoring
+    ltrace         # library call monitoring
+    lsof           # list open files
+    sysstat        # system performance tools
+    lm_sensors     # hardware sensors
+    ethtool        # ethernet device settings
+    pciutils       # lspci
+    usbutils       # lsusb
+
+    # productivity
+    hugo           # static site generator
+    glow           # markdown previewer in terminal
+
+    # nix related
+    nix-output-monitor  # nix with detailed log output (nom command)
+
+    # misc
+    cowsay         # configurable talking cow
   ];
 
   # Neovim — LazyVim manages its own plugins
@@ -64,32 +120,6 @@
   };
 
   home.file.".p10k.zsh".source = ./dotfiles/zsh/.p10k.zsh;
-
-  programs.claude-code.enable = true;
-
-  programs.openclaw = {
-    config = {
-      gateway = {
-        mode = "local";
-        auth = {
-          tokenFile = "/home/jjmachan/.secrets/gateway-auth-token";
-        };
-      };
-
-      channels.telegram = {
-        tokenFile = "/home/jjmachan/.secrets/telegram-bot-token";
-        allowFrom = [ 322721507 ];
-        groups = {
-          "*" = { requireMention = true; };
-        };
-      };
-    };
-
-    instances.default = {
-      enable = true;
-      plugins = [];
-    };
-  };
 
   programs.gh = {
     enable = true;
