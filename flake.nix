@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-25.11";
-    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    claude-code.url = "github:sadjow/claude-code-nix";
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -17,18 +17,12 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, suika, worktrunk }:
+  outputs = { self, nixpkgs, claude-code, home-manager, suika, worktrunk }:
   let
     system = "x86_64-linux";
-    pkgs-unstable = import nixpkgs-unstable {
-      inherit system;
-      config.allowUnfree = true;
-    };
 
-    # Overlay to use claude-code from unstable
-    claude-code-overlay = final: prev: {
-      claude-code = pkgs-unstable.claude-code;
-    };
+    # Overlay to use claude-code from sadjow/claude-code-nix (hourly updates)
+    claude-code-overlay = claude-code.overlays.default;
   in {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       modules = [

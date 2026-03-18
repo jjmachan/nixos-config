@@ -6,10 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Rebuild and switch to new system configuration
-sudo nixos-rebuild switch --flake .#nixos
+nh os switch .
 
-# Test build without switching
-sudo nixos-rebuild dry-build --flake .#nixos
+# Test build without switching (dry run)
+nh os switch . --dry
 
 # Update all flake inputs
 nix flake update
@@ -22,11 +22,11 @@ nix flake lock --update-input <input-name>
 
 This is a single-host NixOS flake configuration for an x86_64-linux machine (hostname: "nixos", user: jjmachan).
 
-**Flake inputs:** nixpkgs 25.11 (stable), nixpkgs-unstable (for claude-code overlay), home-manager 25.11, suika (local custom module at /home/jjmachan/suika-module — a self-evolving AI agent in a MicroVM).
+**Flake inputs:** nixpkgs 25.11 (stable), claude-code-nix (sadjow/claude-code-nix — hourly auto-updated claude-code), home-manager 25.11, suika (local custom module at /home/jjmachan/suika-module — a self-evolving AI agent in a MicroVM).
 
 ### Key Files
 
-- `flake.nix` — Defines inputs, overlay (claude-code from unstable), and wires together system + home-manager modules
+- `flake.nix` — Defines inputs, overlay (claude-code from claude-code-nix), and wires together system + home-manager modules
 - `system/configuration.nix` — NixOS system config: GNOME desktop, systemd-boot, PipeWire audio, Docker, Tailscale, OpenSSH, Suika service, passwordless sudo, lid-close-no-sleep (server use)
 - `system/hardware-configuration.nix` — Auto-generated hardware config (Intel/KVM, EFI, NVMe)
 - `home.nix` — Home Manager config: 70+ packages, program configs (neovim, zsh, zellij, git, gh), dotfile sourcing
@@ -40,7 +40,7 @@ This is a single-host NixOS flake configuration for an x86_64-linux machine (hos
 
 ## Nix Conventions
 
-- Home Manager is integrated as a NixOS module (not standalone) — changes deploy together with `nixos-rebuild switch`
+- Home Manager is integrated as a NixOS module (not standalone) — changes deploy together with `nh os switch .`
 - `useGlobalPkgs = true` — home-manager shares the system nixpkgs
-- Overlay pattern: packages from unstable are pulled in via overlays in `flake.nix`
+- Overlay pattern: claude-code is pulled from sadjow/claude-code-nix via overlay in `flake.nix`
 - State versions: system is 25.05, home-manager is 25.11

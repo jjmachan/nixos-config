@@ -96,6 +96,7 @@
       dk = "docker";
       nrs = "nh os switch";
       zshconfig = "nvim ~/.zshrc";
+      clauded = "claude --dangerously-skip-permissions";
     };
 
     initContent = lib.mkMerge [
