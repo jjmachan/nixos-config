@@ -44,3 +44,4 @@ This is a single-host NixOS flake configuration for an x86_64-linux machine (hos
 - `useGlobalPkgs = true` — home-manager shares the system nixpkgs
 - Overlay pattern: claude-code is pulled from sadjow/claude-code-nix via overlay in `flake.nix`
 - State versions: system is 25.05, home-manager is 25.11
+- Repo symlink: `~/.config/nixos` → actual repo location. `programs.nh.flake` and the `claude-code-update` systemd service both reference this symlink. To move the repo, update the symlink (`ln -sfn /new/path ~/.config/nixos`) — no rebuild needed.

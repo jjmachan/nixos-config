@@ -149,7 +149,7 @@
   programs.nh = {
     enable = true;
     clean.enable = true;
-    flake = "/home/jjmachan/workspace/personal/nixos-config";
+    flake = "/home/jjmachan/.config/nixos";
   };
 
   # Daily auto-update for claude-code
@@ -159,7 +159,7 @@
       Type = "oneshot";
       ExecStart = "${pkgs.writeShellScript "claude-code-update" ''
         set -e
-        cd /home/jjmachan/workspace/personal/nixos-config
+        cd /home/jjmachan/.config/nixos
         ${pkgs.nix}/bin/nix flake lock --update-input claude-code
         ${pkgs.nh}/bin/nh os switch .
       ''}";
