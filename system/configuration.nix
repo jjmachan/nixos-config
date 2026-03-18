@@ -149,7 +149,31 @@
   programs.nh = {
     enable = true;
     clean.enable = true;
-    flake = "/home/jjmachan/nixos-config";
+    flake = "/home/jjmachan/workspace/personal/nixos-config";
+  };
+
+  # Daily auto-update for claude-code
+  systemd.services.claude-code-update = {
+    description = "Update claude-code flake input and rebuild";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.writeShellScript "claude-code-update" ''
+        set -e
+        cd /home/jjmachan/workspace/personal/nixos-config
+        ${pkgs.nix}/bin/nix flake lock --update-input claude-code
+        ${pkgs.nh}/bin/nh os switch .
+      ''}";
+    };
+    path = [ pkgs.git pkgs.nix pkgs.nh ];
+  };
+
+  systemd.timers.claude-code-update = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "daily";
+      Persistent = true;
+      RandomizedDelaySec = "1h";
+    };
   };
 
   # 1password

@@ -19,8 +19,7 @@
     git
     ripgrep        # recursively searches directories for a regex pattern
     fd             # simple, fast alternative to find
-    fzf            # command-line fuzzy finder
-    direnv         # auto-load environment variables per directory
+direnv         # auto-load environment variables per directory
     zoxide         # smarter cd command
     jq             # command-line JSON processor
     yq-go          # yaml processor
@@ -123,6 +122,12 @@
   };
 
   home.file.".p10k.zsh".source = ./dotfiles/zsh/.p10k.zsh;
+
+  # fzf — fuzzy finder with shell integration (Ctrl+R history, Ctrl+T files, Alt+C dirs)
+  programs.fzf = {
+    enable = true;
+    enableZshIntegration = true;
+  };
 
   # Worktrunk — git worktree management for parallel AI agents
   programs.worktrunk = {
