@@ -15,6 +15,7 @@
     p7zip
 
     # utils
+    uv             # fast Python package manager
     git
     ripgrep        # recursively searches directories for a regex pattern
     fd             # simple, fast alternative to find
@@ -93,6 +94,7 @@
     shellAliases = {
       dc = "docker compose";
       dk = "docker";
+      nrs = "nh os switch";
       zshconfig = "nvim ~/.zshrc";
     };
 
@@ -120,6 +122,12 @@
   };
 
   home.file.".p10k.zsh".source = ./dotfiles/zsh/.p10k.zsh;
+
+  # Worktrunk — git worktree management for parallel AI agents
+  programs.worktrunk = {
+    enable = true;
+    enableZshIntegration = true;
+  };
 
   programs.gh = {
     enable = true;

@@ -12,9 +12,12 @@
       url = "path:/home/jjmachan/suika-module";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    worktrunk = {
+      url = "github:max-sixty/worktrunk";
+    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, suika }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, suika, worktrunk }:
   let
     system = "x86_64-linux";
     pkgs-unstable = import nixpkgs-unstable {
@@ -41,7 +44,10 @@
 
             home-manager.users.jjmachan = {
               home.stateVersion = "25.11";
-              imports = [ ./home.nix ];
+              imports = [
+                ./home.nix
+                worktrunk.homeModules.default
+              ];
             };
           }
         suika.nixosModules.default

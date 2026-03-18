@@ -145,8 +145,22 @@
     "flakes"
   ];
 
+  # nh — nicer nixos-rebuild wrapper (run `nh os switch` from anywhere)
+  programs.nh = {
+    enable = true;
+    clean.enable = true;
+    flake = "/home/jjmachan/nixos-config";
+  };
+
   # 1password
   programs._1password-gui.enable = true;
+  # nix-ld: run unpatched dynamic binaries (e.g. playwright node driver)
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      stdenv.cc.cc.lib
+    ];
+  };
 
 
   # This value determines the NixOS release from which the default
