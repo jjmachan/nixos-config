@@ -19,7 +19,6 @@
     git
     ripgrep        # recursively searches directories for a regex pattern
     fd             # simple, fast alternative to find
-direnv         # auto-load environment variables per directory
     zoxide         # smarter cd command
     jq             # command-line JSON processor
     yq-go          # yaml processor
@@ -112,11 +111,17 @@ direnv         # auto-load environment variables per directory
         # Source p10k config
         [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-        # Direnv
-        eval "$(direnv hook zsh)"
-
         # Zoxide
         eval "$(zoxide init zsh)"
+
+        # Auto-activate flake.nix devShells via direnv
+        auto_flake_envrc() {
+          if [[ -f "$PWD/flake.nix" && ! -f "$PWD/.envrc" ]]; then
+            echo -e "source_up\nuse flake" > "$PWD/.envrc"
+            direnv allow "$PWD"
+          fi
+        }
+        chpwd_functions+=(auto_flake_envrc)
       ''
     ];
   };
@@ -135,6 +140,12 @@ direnv         # auto-load environment variables per directory
     enableZshIntegration = true;
   };
 
+  # Direnv — auto-load environment variables per directory, with nix-direnv for flake support
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+  };
+
   programs.gh = {
     enable = true;
     gitCredentialHelper.enable = true;
@@ -142,6 +153,7 @@ direnv         # auto-load environment variables per directory
 
   programs.git = {
     enable = true;
+    ignores = [ ".envrc" ".direnv" ];
     settings = {
       user = {
         name = "Jithin James";
