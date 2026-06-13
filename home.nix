@@ -6,6 +6,7 @@
     lazygit        # terminal UI for git
     neofetch       # system info display
     nnn            # terminal file manager
+    tmux           # terminal multiplexer
     claude-code    # AI coding assistant
 
     # archives
@@ -19,6 +20,7 @@
     git
     ripgrep        # recursively searches directories for a regex pattern
     fd             # simple, fast alternative to find
+    wl-clipboard   # Wayland clipboard (needed for neovim yank to system clipboard)
     zoxide         # smarter cd command
     jq             # command-line JSON processor
     yq-go          # yaml processor
