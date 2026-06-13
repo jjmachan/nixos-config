@@ -18,6 +18,7 @@
     ./arr.nix
     ./download.nix
     ./jellyseerr.nix
+    ./tunnel.nix
   ];
 
   # Shared group for everything that touches the media library.
