@@ -215,13 +215,13 @@
         ]
       },
       "locked": {
-        "lastModified": 1771809620,
+        "lastModified": 1773956751,
         "narHash": "sha256-ZLSoFDZaHOqhwidfpzERtlkggiZV+JxW2AgZZWnoxi4=",
-        "path": "/home/jjmachan/suika-module",
+        "path": "/home/jjmachan/workspace/personal/suika-module",
         "type": "path"
       },
       "original": {
-        "path": "/home/jjmachan/suika-module",
+        "path": "/home/jjmachan/workspace/personal/suika-module",
         "type": "path"
       }
     },

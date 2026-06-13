@@ -9,7 +9,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     suika = {
-      url = "path:/home/jjmachan/suika-module";
+      url = "path:/home/jjmachan/workspace/personal/suika-module";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     worktrunk = {
