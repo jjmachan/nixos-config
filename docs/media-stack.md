@@ -47,6 +47,7 @@ The stack is a small, modular tree imported with one line (`./media`) from
 | `system/media/arr.nix` | Sonarr + Radarr + Prowlarr (Bazarr commented-out) |
 | `system/media/download.nix` | qBittorrent |
 | `system/media/jellyseerr.nix` | Jellyseerr |
+| `system/media/tunnel.nix` | Cloudflare Tunnel — public access for Jellyfin + Jellyseerr |
 
 ## Storage & permissions
 
@@ -72,7 +73,10 @@ Permission model (the #1 thing that breaks these setups):
 
 ## Networking & remote access
 
-Nothing is exposed to the LAN or internet. Access is **tailnet-only**:
+Two access paths: **tailnet-only** for everything (incl. admin), and **public** for just
+the two user-facing apps. Nothing is exposed to the LAN, and no inbound ports are opened.
+
+### Tailnet (admin + everything)
 
 - The admin UIs are opened **only on the `tailscale0` interface**
   (`networking.firewall.interfaces."tailscale0".allowedTCPPorts`), not via each service's
@@ -87,6 +91,41 @@ Nothing is exposed to the LAN or internet. Access is **tailnet-only**:
 
 Serve is set up by a `tailscale-serve` systemd oneshot in `default.nix` (with a retry
 loop so it survives `tailscaled` restarting during a rebuild).
+
+### Public (Cloudflare Tunnel)
+
+Jellyfin and Jellyseerr are reachable from the public internet on the `jjmachan.in`
+domain, via a **Cloudflare Tunnel** (`services.cloudflared` in `tunnel.nix`):
+
+| App | Public URL |
+|---|---|
+| Jellyfin | `https://jellyfin.jjmachan.in` |
+| Jellyseerr | `https://requests.jjmachan.in` |
+
+How it works and why it's this way:
+
+- **Outbound-only.** `cloudflared` dials out to Cloudflare's edge and holds the connection
+  open, so there are **no inbound ports and no port-forwarding** — essential since the box
+  is behind home NAT with no public IPv4. TLS is terminated at Cloudflare's edge.
+- **Only these two hostnames are routed.** The tunnel `ingress` lists `jellyfin` → `:8096`
+  and `requests` → `:5055`, with a `default = "http_status:404"` catch-all. The admin apps
+  have **no public DNS record at all** — double protection.
+- **DNS is on Cloudflare.** The whole `jjmachan.in` zone was moved from NS1 to Cloudflare
+  (free plan requires the full zone). The apex Netlify site + email records were recreated
+  as **DNS-only (grey cloud)**; only the two tunnel CNAMEs are proxied (orange).
+- **Credentials** live at `/var/lib/cloudflared/<tunnel-id>.json` (+ `cert.pem`) — secrets,
+  kept out of git. The tunnel ID in `tunnel.nix` is just an identifier.
+- **Don't put Cloudflare Access in front of Jellyfin** — it breaks native TV/mobile apps.
+  Public exposure relies on Jellyfin's own auth, so keep the admin password strong.
+
+**Add another public service:** `cloudflared tunnel route dns <tunnel-id> <name>.jjmachan.in`,
+then add `"<name>.jjmachan.in" = "http://localhost:<port>";` to the `ingress` in
+`tunnel.nix` and `nh os switch`.
+
+One-time setup recap (already done): `cloudflared tunnel login` (browser auth → `cert.pem`),
+`cloudflared tunnel create jjmachan` (→ credentials JSON + tunnel ID), then
+`cloudflared tunnel route dns` for each hostname; move the secrets into
+`/var/lib/cloudflared/`.
 
 ## Hardware transcoding
 
@@ -171,6 +210,16 @@ Hard-won lessons from setting this up:
 - **macOS can't resolve `*.tail66a220.ts.net`.** Use the official **Tailscale.app**, not
   the Homebrew `tailscale` daemon — the Homebrew daemon runs unprivileged
   (userspace-networking) and can't program macOS DNS, so MagicDNS names won't resolve.
+- **Imported episodes don't show in Jellyfin.** Jellyfin's real-time monitor often misses
+  hardlinked imports. Trigger **Dashboard → Scheduled Tasks → Scan All Libraries**, or wire
+  **Sonarr/Radarr → Settings → Connect → Jellyfin** (On Import) so it auto-rescans.
+- **Cloudflare auto-imports records as Proxied (orange).** After moving the zone, set
+  everything that already existed to **DNS-only (grey)** — especially `smtp`/`imap`/`pop`/
+  `webmail` (Cloudflare only proxies HTTP/S, so proxying these **breaks email**) and the
+  Netlify apex/`www`. Only the `jellyfin`/`requests` tunnel CNAMEs should be orange.
+- **`cloudflared tunnel login` → "Failed to fetch resource".** The auth URL times out if
+  too long passes between generating it and clicking Authorize. Re-run `tunnel login` and
+  authorize promptly (within a minute).
 
 ## Deferred / future
 
