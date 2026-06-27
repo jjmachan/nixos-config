@@ -34,6 +34,7 @@ nh os switch .
 | `system/hardware-configuration.nix` | Auto-generated hardware config |
 | `home.nix` | Home Manager config (packages, shell, programs) |
 | `dotfiles/` | App configs (neovim, zellij, zsh) |
+| `docs/` | Project documentation — see [media-stack.md](docs/media-stack.md) |
 
 ## Important: Repo Location
 
