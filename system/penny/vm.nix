@@ -124,11 +124,27 @@
       RemainAfterExit = true;
     };
     script = ''
-      install -d -o hermes -g hermes -m 0750 /persist/hermes/.hermes
+      install -d -o hermes -g hermes -m 2770 /persist/hermes/.hermes
+
+      # .env — always re-seed from the read-only secrets mount.
       env_file=/persist/hermes/.hermes/.env
       install -o hermes -g hermes -m 0640 /dev/null "$env_file"
       if [ -f /secrets/penny.env ]; then
         cat /secrets/penny.env >> "$env_file"
+      fi
+
+      # config.yaml — the module's activation merge also races the mounts, so
+      # the declared model never lands. Write the canonical config when the
+      # model is wrong/missing (preserves hermes' runtime keys once correct).
+      cfg=/persist/hermes/.hermes/config.yaml
+      if ! grep -q '^model: openai-codex/gpt-5.5$' "$cfg" 2>/dev/null; then
+        cat > "$cfg" <<'YAML'
+model: openai-codex/gpt-5.5
+terminal:
+  backend: local
+YAML
+        chown hermes:hermes "$cfg"
+        chmod 0640 "$cfg"
       fi
     '';
   };

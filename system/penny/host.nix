@@ -62,14 +62,19 @@
   networking.networkmanager.unmanaged = [ "br-penny" "tap-penny" ];
 
   # Isolation: Penny may reach the internet but NOT the host LAN, Tailscale,
-  # or other private networks. NAT alone masquerades without restricting the
-  # destination, so add FORWARD drops for all private ranges from br-penny.
+  # other private networks, OR the host itself.
+  #  - FORWARD drops: VM -> other machines on private ranges (routed traffic).
+  #  - INPUT drops:   VM -> the host's own services (host LAN/Tailscale/bridge
+  #    IPs). Established/related is accepted first so host->VM debug SSH still
+  #    works (the host initiates; only the VM's reply hits the host INPUT).
   networking.firewall.extraCommands = ''
     iptables -I FORWARD -i br-penny -d 10.0.0.0/8 -j DROP
     iptables -I FORWARD -i br-penny -d 172.16.0.0/12 -j DROP
     iptables -I FORWARD -i br-penny -d 192.168.0.0/16 -j DROP
     iptables -I FORWARD -i br-penny -d 100.64.0.0/10 -j DROP
     iptables -I FORWARD -i br-penny -d 169.254.0.0/16 -j DROP
+    iptables -I INPUT -i br-penny -j DROP
+    iptables -I INPUT -i br-penny -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
   '';
   networking.firewall.extraStopCommands = ''
     iptables -D FORWARD -i br-penny -d 10.0.0.0/8 -j DROP 2>/dev/null || true
@@ -77,5 +82,7 @@
     iptables -D FORWARD -i br-penny -d 192.168.0.0/16 -j DROP 2>/dev/null || true
     iptables -D FORWARD -i br-penny -d 100.64.0.0/10 -j DROP 2>/dev/null || true
     iptables -D FORWARD -i br-penny -d 169.254.0.0/16 -j DROP 2>/dev/null || true
+    iptables -D INPUT -i br-penny -j DROP 2>/dev/null || true
+    iptables -D INPUT -i br-penny -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true
   '';
 }
