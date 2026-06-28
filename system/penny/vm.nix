@@ -101,12 +101,36 @@
     package = inputs.hermes-agent.packages.x86_64-linux.minimal;
     extraDependencyGroups = [ "messaging" "anthropic" ];
     settings = {
-      # Opus 4.8 via Anthropic subscription OAuth (CLAUDE_CODE_OAUTH_TOKEN in
-      # penny.env is auto-detected and routed "as Claude Code").
-      # NOTE: confirm the exact model id with `hermes model` after first boot.
-      model = "anthropic/claude-opus-4.8";
+      # GPT-5.5 via the openai-codex provider, authed with the ChatGPT Pro
+      # subscription (one-time device-code login → auth.json on /persist).
+      # Unlike Anthropic OAuth, this draws from the included subscription quota.
+      model = "openai-codex/gpt-5.5";
       terminal.backend = "local";          # tools run inside the container
     };
+  };
+
+  # The hermes module seeds HERMES_HOME/.env from environmentFiles at NixOS
+  # *activation* time, but in a MicroVM that races the virtiofs /persist +
+  # /secrets mounts (HERMES_HOME doesn't exist yet), so the secrets silently
+  # fail to land and the gateway starts with no tokens. Re-seed deterministically
+  # after the mounts and before hermes starts.
+  systemd.services.penny-hermes-env = {
+    description = "Seed Penny hermes .env from /secrets (after virtiofs mounts)";
+    before = [ "hermes-agent.service" ];
+    wantedBy = [ "hermes-agent.service" ];
+    unitConfig.RequiresMountsFor = "/persist /secrets";
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      install -d -o hermes -g hermes -m 0750 /persist/hermes/.hermes
+      env_file=/persist/hermes/.hermes/.env
+      install -o hermes -g hermes -m 0640 /dev/null "$env_file"
+      if [ -f /secrets/penny.env ]; then
+        cat /secrets/penny.env >> "$env_file"
+      fi
+    '';
   };
 
   # --- SSH for first-run/debug, key-only, reachable only on br-penny ---

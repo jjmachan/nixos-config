@@ -60,4 +60,22 @@
   };
 
   networking.networkmanager.unmanaged = [ "br-penny" "tap-penny" ];
+
+  # Isolation: Penny may reach the internet but NOT the host LAN, Tailscale,
+  # or other private networks. NAT alone masquerades without restricting the
+  # destination, so add FORWARD drops for all private ranges from br-penny.
+  networking.firewall.extraCommands = ''
+    iptables -I FORWARD -i br-penny -d 10.0.0.0/8 -j DROP
+    iptables -I FORWARD -i br-penny -d 172.16.0.0/12 -j DROP
+    iptables -I FORWARD -i br-penny -d 192.168.0.0/16 -j DROP
+    iptables -I FORWARD -i br-penny -d 100.64.0.0/10 -j DROP
+    iptables -I FORWARD -i br-penny -d 169.254.0.0/16 -j DROP
+  '';
+  networking.firewall.extraStopCommands = ''
+    iptables -D FORWARD -i br-penny -d 10.0.0.0/8 -j DROP 2>/dev/null || true
+    iptables -D FORWARD -i br-penny -d 172.16.0.0/12 -j DROP 2>/dev/null || true
+    iptables -D FORWARD -i br-penny -d 192.168.0.0/16 -j DROP 2>/dev/null || true
+    iptables -D FORWARD -i br-penny -d 100.64.0.0/10 -j DROP 2>/dev/null || true
+    iptables -D FORWARD -i br-penny -d 169.254.0.0/16 -j DROP 2>/dev/null || true
+  '';
 }
