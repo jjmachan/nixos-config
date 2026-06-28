@@ -146,6 +146,21 @@ YAML
         chown hermes:hermes "$cfg"
         chmod 0640 "$cfg"
       fi
+
+      # WhatsApp Baileys bridge: the nix package doesn't ship
+      # scripts/whatsapp-bridge (setuptools data-files don't land in
+      # site-packages under uv2nix), so hermes can't find bridge.js. Stage the
+      # source into the writable HERMES_HOME bridge dir, where
+      # resolve_whatsapp_bridge_dir() picks it up directly and npm-installs
+      # Baileys at runtime. Sourced from the pinned hermes-agent flake input.
+      bsrc=${inputs.hermes-agent}/scripts/whatsapp-bridge
+      bdst=/persist/hermes/.hermes/scripts/whatsapp-bridge
+      if [ -d "$bsrc" ]; then
+        install -d -o hermes -g hermes -m 0750 "$bdst"
+        for f in bridge.js allowlist.js package.json package-lock.json; do
+          [ -f "$bsrc/$f" ] && install -o hermes -g hermes -m 0640 "$bsrc/$f" "$bdst/$f"
+        done
+      fi
     '';
   };
 
