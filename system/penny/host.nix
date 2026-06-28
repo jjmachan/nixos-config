@@ -42,9 +42,10 @@
     networkConfig.ConfigureWithoutCarrier = true;
   };
 
-  # Attach the VM's tap interface to the bridge.
+  # Attach the VM's tap interface to the bridge. The tap is named "tap-penny"
+  # (not "vm-penny") so it does NOT match suika's "vm-*" rule.
   systemd.network.networks."11-penny-tap" = {
-    matchConfig.Name = "vm-penny";
+    matchConfig.Name = "tap-penny";
     networkConfig.Bridge = "br-penny";
   };
 
@@ -58,5 +59,5 @@
     internalInterfaces = [ "br-penny" ];
   };
 
-  networking.networkmanager.unmanaged = [ "br-penny" "vm-penny" ];
+  networking.networkmanager.unmanaged = [ "br-penny" "tap-penny" ];
 }

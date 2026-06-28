@@ -22,7 +22,9 @@
 
     interfaces = [{
       type = "tap";
-      id = "vm-penny";
+      # NOT "vm-penny": suika's tap rule matches "vm-*" and would enslave it
+      # to br-suika. A distinct name keeps Penny on her own bridge.
+      id = "tap-penny";
       mac = "02:00:00:00:00:02";
     }];
 
