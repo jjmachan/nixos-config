@@ -8,16 +8,20 @@
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    suika = {
-      url = "path:/home/jjmachan/workspace/personal/suika-module";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     worktrunk = {
       url = "github:max-sixty/worktrunk";
     };
+    # MicroVM host for Penny.
+    microvm = {
+      url = "github:astro/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    # Hermes-agent provides its own NixOS module + uv2nix package.
+    # Keep its own nixpkgs (uv2nix targets nixpkgs-unstable) — do NOT follow ours.
+    hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
-  outputs = { self, nixpkgs, claude-code, home-manager, suika, worktrunk }:
+  outputs = inputs@{ self, nixpkgs, claude-code, home-manager, worktrunk, microvm, hermes-agent }:
   let
     system = "x86_64-linux";
 
@@ -25,6 +29,8 @@
     claude-code-overlay = claude-code.overlays.default;
   in {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
+      # Expose flake inputs to modules (Penny needs microvm + hermes-agent).
+      specialArgs = { inherit inputs; };
       modules = [
         ./system/configuration.nix
         {
@@ -44,7 +50,7 @@
               ];
             };
           }
-        suika.nixosModules.default
+        ./system/penny/host.nix
       ];
     };
   };

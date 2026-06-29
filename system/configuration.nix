@@ -195,11 +195,6 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.05"; # Did you read the comment?
-  # Suika — self-evolving AI agent in a MicroVM
-  services.suika = {
-    enable = true;
-    externalInterface = "wlp0s20f3";
-  };
 
   # Prevent sleep/suspend on lid close — act as server
   services.logind.settings.Login = {
