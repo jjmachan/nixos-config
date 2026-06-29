@@ -18,6 +18,7 @@
       ingress = {
         "jellyfin.jjmachan.in" = "http://localhost:8096";
         "requests.jjmachan.in" = "http://localhost:5055";
+        "books.jjmachan.in"    = "http://localhost:8083";
       };
     };
   };
