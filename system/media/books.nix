@@ -115,6 +115,9 @@
     group = "media";
     dataDir = "/srv/media/books";
     configDir = "/srv/media/books/.syncthing";
+    # GUI defaults to 127.0.0.1 only; bind all interfaces so it's reachable over the
+    # tailnet (the firewall above still restricts 8384 to tailscale0).
+    guiAddress = "0.0.0.0:8384";
     overrideDevices = false; # don't clobber GUI-added devices on rebuild
     overrideFolders = false; # don't clobber GUI-added folders on rebuild
     settings.folders."books-archive" = {
