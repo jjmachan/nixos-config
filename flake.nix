@@ -8,17 +8,10 @@
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    suika = {
-      url = "path:/home/jjmachan/workspace/personal/suika-module";
-      inputs.nixpkgs.follows = "nixpkgs";
-      # Share ONE microvm instance with Penny so microvm.nixosModules.host
-      # is imported once (module-system dedup) — no double-import conflict.
-      inputs.microvm.follows = "microvm";
-    };
     worktrunk = {
       url = "github:max-sixty/worktrunk";
     };
-    # MicroVM host for Penny (Penny owns this import; suika follows it above).
+    # MicroVM host for Penny.
     microvm = {
       url = "github:astro/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -28,7 +21,7 @@
     hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
-  outputs = inputs@{ self, nixpkgs, claude-code, home-manager, suika, worktrunk, microvm, hermes-agent }:
+  outputs = inputs@{ self, nixpkgs, claude-code, home-manager, worktrunk, microvm, hermes-agent }:
   let
     system = "x86_64-linux";
 
@@ -57,7 +50,6 @@
               ];
             };
           }
-        suika.nixosModules.default
         ./system/penny/host.nix
       ];
     };

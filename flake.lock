@@ -336,7 +336,6 @@
         "home-manager": "home-manager",
         "microvm": "microvm",
         "nixpkgs": "nixpkgs_3",
-        "suika": "suika",
         "worktrunk": "worktrunk"
       }
     },
@@ -375,26 +374,6 @@
       "original": {
         "type": "git",
         "url": "https://spectrum-os.org/git/spectrum"
-      }
-    },
-    "suika": {
-      "inputs": {
-        "microvm": [
-          "microvm"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1773956751,
-        "narHash": "sha256-ZLSoFDZaHOqhwidfpzERtlkggiZV+JxW2AgZZWnoxi4=",
-        "path": "/home/jjmachan/workspace/personal/suika-module",
-        "type": "path"
-      },
-      "original": {
-        "path": "/home/jjmachan/workspace/personal/suika-module",
-        "type": "path"
       }
     },
     "systems": {
