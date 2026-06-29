@@ -76,7 +76,16 @@
         \( -iname '*.epub' -o -iname '*.mobi' -o -iname '*.azw3' -o -iname '*.pdf' \
            -o -iname '*.cbz' -o -iname '*.fb2' -o -iname '*.djvu' \) -print0 |
       while IFS= read -r -d "" f; do
-        key=$(printf '%s' "$f$(stat -c '%s-%Y' "$f")" | md5sum | cut -d' ' -f1)
+        # Skip files still being written (download/Syncthing in progress): require the
+        # size to be stable across a short interval, else a growing file gets copied as
+        # partials and CWA imports duplicates. The timer re-runs to catch it once settled.
+        size1=$(stat -c %s "$f")
+        sleep 2
+        size2=$(stat -c %s "$f" 2>/dev/null || echo skip)
+        [ "$size1" != "$size2" ] && continue
+        # Marker keyed on path+size+mtime: a given stable file is copied exactly once,
+        # and stays "seen" even after CWA deletes it from the ingest folder.
+        key=$(printf '%s' "$f-$size2-$(stat -c %Y "$f")" | md5sum | cut -d' ' -f1)
         marker="$STATE/$key"
         [ -e "$marker" ] && continue
         if cp -n -- "$f" "$INGEST/"; then
@@ -86,12 +95,14 @@
     '';
   };
 
-  # Sweep on a timer too, in case a watch event is missed (box busy, file written slowly).
+  # Sweep on a timer too: PathModified isn't recursive and a file's final settle may
+  # arrive between triggers, so the timer is the reliable pickup path. Short interval
+  # keeps import latency low.
   systemd.timers.books-bridge = {
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "2m";
-      OnUnitActiveSec = "10m";
+      OnUnitActiveSec = "3m";
       Unit = "books-bridge.service";
     };
   };
