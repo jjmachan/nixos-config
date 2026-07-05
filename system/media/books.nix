@@ -43,6 +43,9 @@
       PGID = "986"; # media
       TZ = "America/Los_Angeles";
     };
+    # Secret (Hardcover API token) kept OUT of git — created out-of-band on the box,
+    # root-only. Provides reliable cover/metadata fetching (real API, not scraping).
+    environmentFiles = [ "/var/lib/cwa/hardcover.env" ];
     volumes = [
       "/srv/media/books/config:/config"
       "/srv/media/books/calibre-library:/calibre-library"
