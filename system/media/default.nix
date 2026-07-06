@@ -18,6 +18,7 @@
     ./arr.nix
     ./download.nix
     ./jellyseerr.nix
+    ./books.nix
     ./tunnel.nix
   ];
 
