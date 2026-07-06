@@ -51,6 +51,7 @@
             };
           }
         ./system/penny/host.nix
+        ./system/alfred/host.nix
       ];
     };
   };
