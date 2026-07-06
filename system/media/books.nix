@@ -16,6 +16,54 @@
 #     it's login-gated. Syncthing's UI/protocol stay tailnet-only.
 { config, pkgs, lib, ... }:
 
+let
+  # Cover backfill: CWA v4.0.6's own auto-metadata cover-apply is an unimplemented
+  # stub (`pass` with a TODO), so covers never get set — not on ingest, not on demand.
+  # This script bypasses it: for every book with no cover it queries the metadata
+  # providers (Hardcover API first — reliable; then Kobo, then Google), takes the first
+  # result that actually HAS a cover image, downloads it (browser UA — the CDNs 403 a
+  # bare urllib), and sets it via calibredb (which updates cover.jpg + has_cover atomically).
+  # Runs inside the CWA container (has the cps providers, HARDCOVER_TOKEN env, and calibredb).
+  coverFillScript = pkgs.writeText "cwa-cover-fill.py" ''
+    import sys, urllib.request, subprocess, sqlite3, os, time
+    sys.path.append("/app/calibre-web-automated"); sys.path.insert(1, "/app/calibre-web-automated/scripts/")
+    from cps.calibre_init import init_calibre_db_from_app_db; init_calibre_db_from_app_db()
+    from cps.metadata_provider.hardcover import Hardcover
+    from cps.metadata_provider.kobo import Kobo
+    from cps.metadata_provider.google import Google
+    UA = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"}
+    providers = [("hardcover", Hardcover()), ("kobo", Kobo()), ("google", Google())]
+    con = sqlite3.connect("/calibre-library/metadata.db")
+    rows = con.execute("SELECT id,title,author_sort FROM books WHERE has_cover=0 ORDER BY id").fetchall()
+    if not rows:
+        print("no cover-less books"); sys.exit(0)
+    print("cover-less books:", len(rows)); done = 0
+    for bid, title, author in rows:
+        q = (title + " " + (author or "")).replace(chr(8217), "").replace(chr(8216), "")
+        cover = src = None
+        for name, prov in providers:
+            try:
+                res = prov.search(q)
+                if res and getattr(res[0], "cover", None):
+                    cover = res[0].cover; src = name; break
+            except Exception:
+                pass
+            time.sleep(1)
+        if not cover:
+            print("  no-cover-found", bid, title[:36]); continue
+        try:
+            data = urllib.request.urlopen(urllib.request.Request(cover, headers=UA), timeout=25).read()
+            p = "/tmp/cvf_%d.jpg" % bid; open(p, "wb").write(data)
+            r = subprocess.run(["calibredb", "set_metadata", "--with-library", "/calibre-library", str(bid), "--field", "cover:" + p], capture_output=True)
+            os.remove(p)
+            if r.returncode == 0:
+                done += 1; print("  cover(%s)" % src, bid, title[:36])
+        except Exception as e:
+            print("  err", bid, repr(e)[:40])
+        time.sleep(1)
+    print("covers set:", done, "of", len(rows))
+  '';
+in
 {
   # First use of oci-containers in this config; docker is already enabled.
   virtualisation.oci-containers.backend = "docker";
@@ -107,6 +155,28 @@
       OnBootSec = "2m";
       OnUnitActiveSec = "3m";
       Unit = "books-bridge.service";
+    };
+  };
+
+  # Cover backfill — fill in covers for any book that lacks one (see coverFillScript
+  # above for why CWA's native path can't). Piped into the container over stdin so no
+  # bind-mount/container-recreate is needed when the script changes.
+  systemd.services.books-covers = {
+    description = "Fetch missing book covers (Hardcover/Kobo/Google) and set via calibredb";
+    after = [ "docker-calibre-web-automated.service" ];
+    wants = [ "docker-calibre-web-automated.service" ];
+    serviceConfig = { Type = "oneshot"; };
+    script = "${pkgs.docker}/bin/docker exec -i calibre-web-automated python3 - < ${coverFillScript}";
+  };
+
+  # Runs a while after boot, then periodically — new imports without covers get one
+  # within the interval. A no-op (fast) when every book already has a cover.
+  systemd.timers.books-covers = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "8m";
+      OnUnitActiveSec = "30m";
+      Unit = "books-covers.service";
     };
   };
 
