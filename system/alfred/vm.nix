@@ -1,7 +1,7 @@
-# Penny guest — the NixOS config that runs inside the penny-vm MicroVM.
+# Alfred guest — the NixOS config that runs inside the alfred-vm MicroVM.
 #
 # Runs hermes-agent in *container mode*: hermes executes inside an OCI
-# (docker) container that gives Penny a writable Ubuntu userland to
+# (docker) container that gives Alfred a writable Ubuntu userland to
 # self-install tools, while the MicroVM contains the blast radius.
 #
 # Persistence: the MicroVM root FS is read-only/ephemeral. Everything that
@@ -12,7 +12,7 @@
 {
   imports = [ inputs.hermes-agent.nixosModules.default ];
 
-  networking.hostName = "penny-vm";
+  networking.hostName = "alfred-vm";
 
   # --- MicroVM hardware ---
   microvm = {
@@ -22,10 +22,9 @@
 
     interfaces = [{
       type = "tap";
-      # NOT "vm-penny": suika's tap rule matches "vm-*" and would enslave it
-      # to br-suika. A distinct name keeps Penny on her own bridge.
-      id = "tap-penny";
-      mac = "02:00:00:00:00:02";
+      # Unique, non-glob-matchable tap name (see host.nix).
+      id = "tap-alfred";
+      mac = "02:00:00:00:00:03";
     }];
 
     shares = [
@@ -40,14 +39,14 @@
         # Persistent state: hermes HOME + docker data-root live under here.
         proto = "virtiofs";
         tag = "persist";
-        source = "/var/lib/penny/persist";
+        source = "/var/lib/alfred/persist";
         mountPoint = "/persist";
       }
       {
-        # Read-only secrets (penny.env): OAuth + Slack tokens.
+        # Read-only secrets (alfred.env): Slack tokens.
         proto = "virtiofs";
         tag = "secrets";
-        source = "/var/lib/penny/secrets";
+        source = "/var/lib/alfred/secrets";
         mountPoint = "/secrets";
         readOnly = true;
       }
@@ -65,7 +64,7 @@
         # Dedicated ext4 volume for docker's data-root. docker's overlay2
         # driver needs a real fs (ext4) — it does NOT work on virtiofs — and
         # this image persists the container's writable layer across reboots.
-        image = "penny-docker.img";
+        image = "alfred-docker.img";
         mountPoint = "/var/lib/docker";
         fsType = "ext4";
         size = 30720;
@@ -79,8 +78,8 @@
   systemd.network.enable = true;
   systemd.network.networks."10-eth" = {
     matchConfig.Type = "ether";
-    addresses = [{ Address = "192.168.101.2/24"; }];
-    routes = [{ Gateway = "192.168.101.1"; }];
+    addresses = [{ Address = "192.168.102.2/24"; }];
+    routes = [{ Gateway = "192.168.102.1"; }];
     networkConfig.DNS = [ "1.1.1.1" "8.8.8.8" ];
   };
 
@@ -89,26 +88,25 @@
   # volume above so the container's writable layer survives reboots.
   virtualisation.docker.enable = true;
 
-  # --- Penny (hermes-agent) ---
+  # --- Alfred (hermes-agent) ---
   services.hermes-agent = {
     enable = true;
     container.enable = true;
     container.backend = "docker";
     stateDir = "/persist/hermes";          # HERMES_HOME (.hermes/) + workspace
-    environmentFiles = [ "/secrets/penny.env" ];
-    # Slim build: Slack + Telegram (both in the "messaging" group) + Anthropic
-    # instead of the full package (which pulls voice/tts/matrix/etc). Trims
-    # build time & surface.
+    environmentFiles = [ "/secrets/alfred.env" ];
+    # Slim build: Slack lives in the "messaging" group; no other groups needed.
     package = inputs.hermes-agent.packages.x86_64-linux.minimal;
-    extraDependencyGroups = [ "messaging" "anthropic" ];
+    extraDependencyGroups = [ "messaging" ];
     settings = {
       # GPT-5.6 Sol via the openai-codex provider, authed with the ChatGPT Pro
       # subscription (one-time device-code login → auth.json on /persist).
-      # Unlike Anthropic OAuth, this draws from the included subscription quota.
       model = "openai-codex/gpt-5.6-sol";
       terminal.backend = "local";          # tools run inside the container
-      # Explicit compaction threshold: keeps the 85% behavior of hermes' codex
-      # "autoraise" without the FYI notice it posts into the chat (see alfred).
+      # Pin the compaction threshold explicitly: hermes' codex "autoraise"
+      # (50%→85% for capped-context codex models) posts an FYI notice into the
+      # chat every time it kicks in; an explicit value keeps the 85% behavior
+      # without the auto-raise or its notice.
       compression.threshold = 0.85;
     };
   };
@@ -118,8 +116,8 @@
   # /secrets mounts (HERMES_HOME doesn't exist yet), so the secrets silently
   # fail to land and the gateway starts with no tokens. Re-seed deterministically
   # after the mounts and before hermes starts.
-  systemd.services.penny-hermes-env = {
-    description = "Seed Penny hermes .env from /secrets (after virtiofs mounts)";
+  systemd.services.alfred-hermes-env = {
+    description = "Seed Alfred hermes .env from /secrets (after virtiofs mounts)";
     before = [ "hermes-agent.service" ];
     wantedBy = [ "hermes-agent.service" ];
     unitConfig.RequiresMountsFor = "/persist /secrets";
@@ -133,8 +131,8 @@
       # .env — always re-seed from the read-only secrets mount.
       env_file=/persist/hermes/.hermes/.env
       install -o hermes -g hermes -m 0640 /dev/null "$env_file"
-      if [ -f /secrets/penny.env ]; then
-        cat /secrets/penny.env >> "$env_file"
+      if [ -f /secrets/alfred.env ]; then
+        cat /secrets/alfred.env >> "$env_file"
       fi
 
       # config.yaml — the module's activation merge also races the mounts, so
@@ -155,7 +153,7 @@ YAML
     '';
   };
 
-  # --- SSH for first-run/debug, key-only, reachable only on br-penny ---
+  # --- SSH for first-run/debug, key-only, reachable only on br-alfred ---
   services.openssh = {
     enable = true;
     settings.PasswordAuthentication = false;
@@ -166,7 +164,7 @@ YAML
   ];
 
   # Handy tools for poking around the VM (hermes provisions its own in-container).
-  environment.systemPackages = with pkgs; [ git ripgrep ffmpeg curl jq ];
+  environment.systemPackages = with pkgs; [ git ripgrep curl jq ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
