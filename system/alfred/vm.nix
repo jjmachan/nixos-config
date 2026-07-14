@@ -99,10 +99,15 @@
     package = inputs.hermes-agent.packages.x86_64-linux.minimal;
     extraDependencyGroups = [ "messaging" ];
     settings = {
-      # GPT-5.5 via the openai-codex provider, authed with the ChatGPT Pro
+      # GPT-5.6 Sol via the openai-codex provider, authed with the ChatGPT Pro
       # subscription (one-time device-code login → auth.json on /persist).
-      model = "openai-codex/gpt-5.5";
+      model = "openai-codex/gpt-5.6-sol";
       terminal.backend = "local";          # tools run inside the container
+      # Pin the compaction threshold explicitly: hermes' codex "autoraise"
+      # (50%→85% for capped-context codex models) posts an FYI notice into the
+      # chat every time it kicks in; an explicit value keeps the 85% behavior
+      # without the auto-raise or its notice.
+      compression.threshold = 0.85;
     };
   };
 
@@ -134,11 +139,13 @@
       # the declared model never lands. Write the canonical config when the
       # model is wrong/missing (preserves hermes' runtime keys once correct).
       cfg=/persist/hermes/.hermes/config.yaml
-      if ! grep -q '^model: openai-codex/gpt-5.5$' "$cfg" 2>/dev/null; then
+      if ! grep -q '^model: openai-codex/gpt-5.6-sol$' "$cfg" 2>/dev/null; then
         cat > "$cfg" <<'YAML'
-model: openai-codex/gpt-5.5
+model: openai-codex/gpt-5.6-sol
 terminal:
   backend: local
+compression:
+  threshold: 0.85
 YAML
         chown hermes:hermes "$cfg"
         chmod 0640 "$cfg"
