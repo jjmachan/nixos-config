@@ -193,9 +193,15 @@ in
     guiAddress = "0.0.0.0:8384";
     overrideDevices = false; # don't clobber GUI-added devices on rebuild
     overrideFolders = false; # don't clobber GUI-added folders on rebuild
+    # The phone must be declared here: override* = false only stops the module
+    # from DELETING GUI-added devices/folders — declared folders are still
+    # re-applied on every rebuild, so a folder with no `devices` list gets its
+    # GUI-added "Share With" entries wiped (this silently broke phone sync).
+    settings.devices.pixel.id = "NSWPCVH-KSFNVXH-LYL6SAY-ZEMESUG-YEQQZUD-D255PMI-5HOZ644-BFZOOQN";
     settings.folders."books-archive" = {
       path = "/srv/media/books/archive";
       label = "Books";
+      devices = [ "pixel" ];
     };
   };
   systemd.services.syncthing.serviceConfig.UMask = "0002";
