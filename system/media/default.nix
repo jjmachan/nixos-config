@@ -19,6 +19,7 @@
     ./download.nix
     ./jellyseerr.nix
     ./books.nix
+    ./highlights.nix
     ./tunnel.nix
   ];
 
