@@ -64,6 +64,14 @@ in
     '';
   };
 
+  # The Kobo can't join the tailnet, so unlike the phone (which syncs over
+  # tailscale0, see books.nix) it needs Syncthing reachable on the LAN. The box
+  # sits behind home NAT with only the Cloudflare tunnel exposed publicly, so
+  # opening these on all interfaces is effectively LAN-only. 21027/UDP is local
+  # discovery — how the Kobo finds the server without global discovery servers.
+  networking.firewall.allowedTCPPorts = [ 22000 ];
+  networking.firewall.allowedUDPPorts = [ 22000 21027 ];
+
   # The device only syncs while KOReader is awake on WiFi, so ingest latency is
   # dominated by the device anyway — a relaxed timer is plenty.
   systemd.timers.highlights-ingest = {
