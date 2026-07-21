@@ -131,10 +131,22 @@
       install -d -o hermes -g hermes -m 2770 /persist/hermes/.hermes
 
       # .env — always re-seed from the read-only secrets mount.
+      # /sethome persists the home channel as *_HOME_CHANNEL* lines in this
+      # same .env, so carry those over across the re-seed or every reboot
+      # silently resets the home channel.
       env_file=/persist/hermes/.hermes/.env
+      home_lines=$(grep -hE '^[A-Z_]*HOME_CHANNEL[A-Z_]*=' "$env_file" 2>/dev/null || true)
       install -o hermes -g hermes -m 0640 /dev/null "$env_file"
       if [ -f /secrets/penny.env ]; then
         cat /secrets/penny.env >> "$env_file"
+      fi
+      if [ -n "$home_lines" ]; then
+        printf '%s\n' "$home_lines" >> "$env_file"
+      fi
+      # Default home channel: the Telegram DM with jjmachan (chat 322721507).
+      # Only seeded when unset so a later /sethome still wins.
+      if ! grep -q '^TELEGRAM_HOME_CHANNEL=' "$env_file"; then
+        echo 'TELEGRAM_HOME_CHANNEL=322721507' >> "$env_file"
       fi
 
       # config.yaml — the module's activation merge also races the mounts, so
