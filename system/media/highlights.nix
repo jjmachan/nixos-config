@@ -39,13 +39,20 @@ in
     "d ${stateDir}  0775 jjmachan media - -"
   ];
 
-  # Server side of the device sync. Pairing stays manual in the GUI (consistent
-  # with overrideDevices/overrideFolders = false in books.nix); this just
-  # pre-declares the folder so accepting the Kobo's share is one click.
+  # Server side of the device sync. The kobo device and its share MUST be
+  # declared here: override* = false only stops the module from deleting
+  # runtime-added entries — declared folders are still re-applied on every
+  # rebuild, so a folder without a `devices` list gets its share wiped (this
+  # silently broke phone book-sync once; see the pixel note in books.nix).
+  # The Kobo's identity (cert/key/config) was pre-generated and lives on the
+  # device at .adds/koreader/settings/syncthing/.
+  services.syncthing.settings.devices.kobo.id =
+    "LBTPZPY-FFD2HHP-37MK4JI-R5VZATZ-BKDNP2K-T375LHF-EJRSG7T-JNNW7AO";
   services.syncthing.settings.folders."kobo-shelf" = {
     path = shelfDir;
     label = "Kobo Shelf";
     type = "receiveonly";
+    devices = [ "kobo" ];
   };
 
   systemd.services.highlights-ingest = {
