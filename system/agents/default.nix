@@ -34,5 +34,18 @@ in
       homeChannelVar = "SLACK_HOME_CHANNEL";
       homeChannelDefault = "D0BF8CP0TJS";
     })
+
+    # Iris — Telegram guide for friends exploring what AI agents can do.
+    # Agent #3. Her persona is checked in (iris/soul.md) and seeded ONCE on
+    # first boot; from then on she evolves it herself. No default home channel
+    # yet — /sethome sets one at runtime (backfill homeChannelDefault once a
+    # chat id is chosen).
+    (mkAgent {
+      name = "iris";
+      subnetOctet = 103;
+      mac = "02:00:00:00:00:04";
+      homeChannelVar = "TELEGRAM_HOME_CHANNEL";
+      soulFile = ./iris/soul.md;
+    })
   ];
 }
