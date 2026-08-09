@@ -37,14 +37,16 @@ in
 
     # Iris — Telegram guide for friends exploring what AI agents can do.
     # Agent #3. Her persona is checked in (iris/soul.md) and seeded ONCE on
-    # first boot; from then on she evolves it herself. No default home channel
-    # yet — /sethome sets one at runtime (backfill homeChannelDefault once a
-    # chat id is chosen).
+    # first boot; from then on she evolves it herself.
+    # Home channel = jjmachan's DM: cron results go to each job's ORIGIN chat
+    # (per-user already); home is only the fallback sink + restart notices.
+    # Seeding it also stops friends from /sethome-ing the global value.
     (mkAgent {
       name = "iris";
       subnetOctet = 103;
       mac = "02:00:00:00:00:04";
       homeChannelVar = "TELEGRAM_HOME_CHANNEL";
+      homeChannelDefault = "322721507";
       soulFile = ./iris/soul.md;
     })
   ];
