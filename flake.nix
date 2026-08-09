@@ -11,7 +11,7 @@
     worktrunk = {
       url = "github:max-sixty/worktrunk";
     };
-    # MicroVM host for Penny.
+    # MicroVM host for the agents (Penny, Alfred, Iris).
     microvm = {
       url = "github:astro/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -29,7 +29,7 @@
     claude-code-overlay = claude-code.overlays.default;
   in {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-      # Expose flake inputs to modules (Penny needs microvm + hermes-agent).
+      # Expose flake inputs to modules (the agents need microvm + hermes-agent).
       specialArgs = { inherit inputs; };
       modules = [
         ./system/configuration.nix
@@ -50,8 +50,7 @@
               ];
             };
           }
-        ./system/penny/host.nix
-        ./system/alfred/host.nix
+        ./system/agents
       ];
     };
   };

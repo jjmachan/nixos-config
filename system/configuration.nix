@@ -98,7 +98,7 @@
   users.users.jjmachan = {
     isNormalUser = true;
     shell = pkgs.zsh;
-    description = "robo-rakesh";
+    description = "Jithin James";
     extraGroups = [ "networkmanager" "wheel" "docker" ];
     packages = with pkgs; [
     #  thunderbird
