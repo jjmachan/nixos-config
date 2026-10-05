@@ -4,7 +4,7 @@ One flake for jjmachan's machines, built around a shared terminal dev module:
 
 | Output | Machine | How it's applied |
 |--------|---------|------------------|
-| `nixosConfigurations.nixbox` | the nixbox (x86_64-linux, NixOS) | `nh os switch .` (`nixos` is an alias until the hostname rename) |
+| `nixosConfigurations.nixbox` | the nixbox (x86_64-linux, NixOS) | `nh os switch .` |
 | `homeConfigurations."jjmachan@macbook"` | the MacBook (aarch64-darwin) | standalone home-manager: `hms` (`nh home switch -c jjmachan@macbook`) |
 | `homeConfigurations."jjmachan@linux"` | any other Linux box with nix | `nix run home-manager -- switch --flake github:jjmachan/nixos-config#jjmachan@linux` |
 | `packages.<system>.dev-tools` | a borrowed box | `nix shell github:jjmachan/nixos-config#dev-tools` (tools only, nothing persists) |
@@ -78,4 +78,3 @@ Parked on purpose; decisions already made are recorded so the next step starts f
 - **Mac phase 2: nix-darwin.** Move home-manager inside nix-darwin (a small documented migration), then manage GUI apps as declarative Homebrew casks, macOS defaults, karabiner (still stowed from mydotfiles), and drop the duplicate Tailscale (brew formula + app both run).
 - **Mac ↔ nixbox handoff.** Default: work runs on the nixbox and the Mac is a window into it (ssh + herdr). For work started on the Mac, Syncthing for `~/workspace` with per-project folders. Constraints: Claude Code keys sessions by absolute path (`/Users/...` vs `/home/...`), live `.git` dirs must not be written from both sides at once, and `.venv` / `node_modules` are platform-specific and must be ignored.
 - **Portable neovim.** Bundle the nvim config into `dev-tools` so borrowed boxes get the editor setup too, not just the binaries.
-- **Rename the host `nixos` → `nixbox`.** Hostname, Tailscale/ssh name, justfile, nh; then drop the `nixos` output alias.

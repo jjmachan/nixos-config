@@ -83,12 +83,8 @@
     };
 
   in {
-    nixosConfigurations = {
-      inherit nixbox;
-      # nh and nixos-rebuild pick the output named after the hostname, which is
-      # still "nixos" until the host is renamed.
-      nixos = nixbox;
-    };
+    # nh and nixos-rebuild pick the output named after the hostname.
+    nixosConfigurations = { inherit nixbox; };
 
     homeConfigurations = {
       "jjmachan@macbook" = mkHome "aarch64-darwin" ./hosts/macbook/home.nix;

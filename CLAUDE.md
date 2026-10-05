@@ -20,7 +20,7 @@ nix flake lock --update-input <input-name>
 
 ## Architecture
 
-One flake for jjmachan's machines: the nixbox (NixOS, x86_64-linux, hostname still "nixos"), the MacBook (standalone home-manager, aarch64-darwin), any other Linux box (`homeConfigurations."jjmachan@linux"`), and a tools-only `packages.<system>.dev-tools` bundle. All share `modules/home/dev`. See README for outputs and the roadmap.
+One flake for jjmachan's machines: the nixbox (NixOS, x86_64-linux, hostname "nixbox"), the MacBook (standalone home-manager, aarch64-darwin), any other Linux box (`homeConfigurations."jjmachan@linux"`), and a tools-only `packages.<system>.dev-tools` bundle. All share `modules/home/dev`. See README for outputs and the roadmap.
 
 **Flake inputs:** nixpkgs 26.05 (stable), claude-code-nix (sadjow/claude-code-nix — hourly auto-updated claude-code), home-manager 26.05, worktrunk, herdr (herdrdev/herdr — built from source, follows our nixpkgs), suika (local custom module at /home/jjmachan/suika-module — a self-evolving AI agent in a MicroVM).
 
@@ -36,7 +36,6 @@ One flake for jjmachan's machines: the nixbox (NixOS, x86_64-linux, hostname sti
 - `modules/home/dev/packages.nix` — the dev package list as a function `pkgs: herdr: [...]`, shared by the module and `dev-tools`
 - `modules/home/desktop/` — GUI-side home config (ghostty: package on Linux, config everywhere)
 - `hosts/nixbox/{media,agents}/` — media stack and agent MicroVMs
-- `nixosConfigurations.nixbox` is the real output; `nixos` is an alias until the hostname is renamed (nh picks the output named after the hostname)
 
 ### Dotfiles (`dotfiles/`)
 
