@@ -148,7 +148,7 @@ in {
     programs.git = {
       enable = true;
       lfs.enable = true;
-      ignores = [ ".envrc" ".direnv" "**/.claude/settings.local.json" ];
+      ignores = [ ".env" ".envrc" ".direnv" "**/.claude/settings.local.json" ];
       settings = {
         user = {
           name = "jjmachan";
