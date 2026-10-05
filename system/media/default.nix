@@ -1,7 +1,7 @@
 # Self-hosted media stack — shared wiring for all services.
 #
 # Architecture (see also the per-service files imported below):
-#   Jellyseerr -> Sonarr/Radarr -> (Prowlarr indexers) -> qBittorrent
+#   Seerr -> Sonarr/Radarr -> (Prowlarr indexers) -> qBittorrent
 #   -> import into /srv/media -> Jellyfin streams it.
 #
 # Design notes:
@@ -9,7 +9,7 @@
 #   * Shared "media" group + setgid dirs + UMask=0002 so every service can
 #     read/write the library without permission fights.
 #   * Nothing is exposed publicly: admin UIs are reachable only over the
-#     tailscale0 interface; Jellyfin + Jellyseerr also get HTTPS via tailscale serve.
+#     tailscale0 interface; Jellyfin + Seerr also get HTTPS via tailscale serve.
 { config, pkgs, lib, ... }:
 
 {
@@ -17,7 +17,7 @@
     ./jellyfin.nix
     ./arr.nix
     ./download.nix
-    ./jellyseerr.nix
+    ./seerr.nix
     ./books.nix
     ./highlights.nix
     ./tunnel.nix
@@ -38,7 +38,7 @@
   # (We deliberately do not use each service's openFirewall, which opens all interfaces.)
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [
     8096  # jellyfin
-    5055  # jellyseerr
+    5055  # seerr (formerly jellyseerr)
     8989  # sonarr
     7878  # radarr
     9696  # prowlarr
@@ -51,11 +51,13 @@
 
   # Expose the two user-facing apps over HTTPS on the tailnet.
   #   https://nixos.tail66a220.ts.net        -> Jellyfin
-  #   https://nixos.tail66a220.ts.net:5055   -> Jellyseerr
-  # (No declarative serve option exists in 25.11, so drive the CLI from a oneshot.)
+  #   https://nixos.tail66a220.ts.net:5055   -> Seerr
+  # Driven from a oneshot on purpose: 26.05's services.tailscale.serve configures
+  # Tailscale *Services* (svc:<name>, admin-approved, own hostname), not serving
+  # on this node's own name, so it is not a replacement for this.
   systemd.services.tailscale-serve = {
-    description = "Expose Jellyfin/Jellyseerr over tailscale serve (HTTPS)";
-    after = [ "tailscaled.service" "jellyfin.service" "jellyseerr.service" ];
+    description = "Expose Jellyfin/Seerr over tailscale serve (HTTPS)";
+    after = [ "tailscaled.service" "jellyfin.service" "seerr.service" ];
     wants = [ "tailscaled.service" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {

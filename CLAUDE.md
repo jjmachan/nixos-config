@@ -22,7 +22,7 @@ nix flake lock --update-input <input-name>
 
 This is a single-host NixOS flake configuration for an x86_64-linux machine (hostname: "nixos", user: jjmachan).
 
-**Flake inputs:** nixpkgs 25.11 (stable), claude-code-nix (sadjow/claude-code-nix — hourly auto-updated claude-code), home-manager 25.11, worktrunk, herdr (herdrdev/herdr — built from source, keeps its own nixpkgs), suika (local custom module at /home/jjmachan/suika-module — a self-evolving AI agent in a MicroVM).
+**Flake inputs:** nixpkgs 26.05 (stable), claude-code-nix (sadjow/claude-code-nix — hourly auto-updated claude-code), home-manager 26.05, worktrunk, herdr (herdrdev/herdr — built from source, follows our nixpkgs), suika (local custom module at /home/jjmachan/suika-module — a self-evolving AI agent in a MicroVM).
 
 ### Key Files
 
@@ -49,5 +49,5 @@ This is a single-host NixOS flake configuration for an x86_64-linux machine (hos
 - Overlay pattern: claude-code is pulled from sadjow/claude-code-nix via overlay in `flake.nix`
 - Flake inputs reach `home.nix` via `home-manager.extraSpecialArgs = { inherit inputs; }` (used for herdr)
 - New dotfiles must be `git add`ed before building — flakes only see git-tracked files
-- State versions: system is 25.05, home-manager is 25.11
+- State versions: system is 25.05, home-manager is 25.11 — never bump them on a release upgrade; they record what created on-disk state (e.g. seerr keeps /var/lib/jellyseerr because system < 26.05)
 - Repo symlink: `~/.config/nixos` → actual repo location. `programs.nh.flake` and the `claude-code-update` systemd service both reference this symlink. To move the repo, update the symlink (`ln -sfn /new/path ~/.config/nixos`) — no rebuild needed.

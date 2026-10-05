@@ -28,7 +28,7 @@ All run as **native NixOS services** (no Docker), declared under `system/media/`
 | Service | Port | NixOS module | State dir | User / Group |
 |---|---|---|---|---|
 | Jellyfin | 8096 | `services.jellyfin` | `/var/lib/jellyfin` | `jellyfin` / `media` |
-| Jellyseerr | 5055 | `services.jellyseerr` | `/var/lib/jellyseerr` | DynamicUser |
+| Seerr (formerly Jellyseerr) | 5055 | `services.seerr` | `/var/lib/jellyseerr` (old path kept: stateVersion < 26.05) | DynamicUser |
 | Sonarr (TV) | 8989 | `services.sonarr` | `/var/lib/sonarr` | `sonarr` / `media` |
 | Radarr (movies) | 7878 | `services.radarr` | `/var/lib/radarr` | `radarr` / `media` |
 | Prowlarr | 9696 | `services.prowlarr` | `/var/lib/private/prowlarr` | DynamicUser |
@@ -46,7 +46,7 @@ The stack is a small, modular tree imported with one line (`./media`) from
 | `system/media/jellyfin.nix` | Jellyfin + Intel Quick Sync hardware transcoding |
 | `system/media/arr.nix` | Sonarr + Radarr + Prowlarr (Bazarr commented-out) |
 | `system/media/download.nix` | qBittorrent |
-| `system/media/jellyseerr.nix` | Jellyseerr |
+| `system/media/seerr.nix` | Seerr |
 | `system/media/tunnel.nix` | Cloudflare Tunnel — public access for Jellyfin + Jellyseerr |
 
 ## Storage & permissions
@@ -178,7 +178,7 @@ After this, requesting a title in Jellyseerr flows all the way to Jellyfin autom
 nh os switch                 # or: sudo nixos-rebuild switch --flake ~/.config/nixos#nixos
 
 # Service status / logs
-systemctl status jellyfin sonarr radarr prowlarr jellyseerr qbittorrent
+systemctl status jellyfin sonarr radarr prowlarr seerr qbittorrent
 journalctl -u sonarr -f      # follow a service's log
 
 # Where things live

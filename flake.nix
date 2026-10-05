@@ -2,18 +2,22 @@
   description = "A very basic flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-26.05";
     claude-code.url = "github:sadjow/claude-code-nix";
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     worktrunk = {
       url = "github:max-sixty/worktrunk";
     };
     # herdr — terminal workspace manager for AI coding agents (not in nixpkgs).
-    # Keep its own nixpkgs: the build needs nixos-unstable's zig + rust-overlay.
-    herdr.url = "github:herdrdev/herdr";
+    # Follows ours: 26.05 ships the zig 0.16 its build needs (rust comes from
+    # its own rust-overlay pin).
+    herdr = {
+      url = "github:herdrdev/herdr";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     # MicroVM host for the agents (Penny, Alfred, Iris).
     microvm = {
       url = "github:astro/microvm.nix";
@@ -31,10 +35,6 @@
     # Overlay to use claude-code from sadjow/claude-code-nix (hourly updates)
     claude-code-overlay = claude-code.overlays.default;
 
-    # nixos-25.11 defaults `docker` to docker_28, which nixpkgs marks insecure
-    # (unmaintained since Nov 2025). Point it at docker_29 so the host, the
-    # agent MicroVMs and anything using pkgs.docker all pick it up.
-    docker-overlay = final: prev: { docker = prev.docker_29; };
   in {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       # Expose flake inputs to modules (the agents need microvm + hermes-agent).
@@ -42,7 +42,7 @@
       modules = [
         ./system/configuration.nix
         {
-          nixpkgs.overlays = [ claude-code-overlay docker-overlay ];
+          nixpkgs.overlays = [ claude-code-overlay ];
         }
         home-manager.nixosModules.home-manager {
             home-manager.useGlobalPkgs = true;

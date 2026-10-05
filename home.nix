@@ -6,7 +6,7 @@ in {
     ghostty        # gpu-accelerated terminal
     yazi           # terminal file manager
     lazygit        # terminal UI for git
-    neofetch       # system info display
+    fastfetch      # system info display (neofetch was removed from nixpkgs)
     nnn            # terminal file manager
     tmux           # terminal multiplexer
     claude-code    # AI coding assistant
@@ -76,6 +76,10 @@ in {
   programs.neovim = {
     enable = true;
     defaultEditor = true;
+    # 26.05 defaults: no python3/ruby providers (LazyVim and jupytext.vim don't
+    # use them). Check with :checkhealth provider if a plugin ever needs one.
+    withPython3 = false;
+    withRuby = false;
   };
   xdg.configFile."nvim".source = ./dotfiles/nvim;
 
