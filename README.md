@@ -6,8 +6,24 @@ One flake for jjmachan's machines, built around a shared terminal dev module:
 |--------|---------|------------------|
 | `nixosConfigurations.nixbox` | the nixbox (x86_64-linux, NixOS) | `nh os switch .` |
 | `homeConfigurations."jjmachan@macbook"` | the MacBook (aarch64-darwin) | standalone home-manager: `hms` (`nh home switch -c jjmachan@macbook`) |
-| `homeConfigurations."jjmachan@linux"` | any other Linux box with nix | `nix run home-manager -- switch --flake github:jjmachan/nixos-config#jjmachan@linux` |
-| `packages.<system>.dev-tools` | a borrowed box | `nix shell github:jjmachan/nixos-config#dev-tools` (tools only, nothing persists) |
+| `homeConfigurations."jjmachan@linux"` | any other Linux box with nix | see [Any box](#any-box) |
+| `packages.<system>.dev-tools` | a borrowed box | see [Any box](#any-box) (tools only, nothing persists) |
+
+## Any box
+
+On a box whose nix doesn't have flakes on, set `NIX_CONFIG` for the command. It
+reaches the `nix` that home-manager runs internally, which a
+`--extra-experimental-features` flag on the outer `nix run` doesn't.
+
+```bash
+export NIX_CONFIG='experimental-features = nix-command flakes'
+
+# Full home (user must be jjmachan): shell, editor, git, dotfiles; turns flakes on for later
+nix run home-manager -- switch --flake github:jjmachan/nixos-config#jjmachan@linux
+
+# Tools only, for this shell; nothing is written to $HOME
+nix shell github:jjmachan/nixos-config#dev-tools
+```
 
 ## Quick Start (nixbox)
 
@@ -77,4 +93,5 @@ Parked on purpose; decisions already made are recorded so the next step starts f
 
 - **Mac phase 2: nix-darwin.** Move home-manager inside nix-darwin (a small documented migration), then manage GUI apps as declarative Homebrew casks, macOS defaults, karabiner (still stowed from mydotfiles), and drop the duplicate Tailscale (brew formula + app both run).
 - **Mac ↔ nixbox handoff.** Default: work runs on the nixbox and the Mac is a window into it (ssh + herdr). For work started on the Mac, Syncthing for `~/workspace` with per-project folders. Constraints: Claude Code keys sessions by absolute path (`/Users/...` vs `/home/...`), live `.git` dirs must not be written from both sides at once, and `.venv` / `node_modules` are platform-specific and must be ignored.
+- **Binary cache for flake-input packages.** herdr and worktrunk aren't on cache.nixos.org, so a fresh box compiles them (~18 min on the nixbox's 16 cores, tested in a clean container). Options: Cachix, or serve the nixbox's store over Tailscale (nix-serve / harmonia).
 - **Portable neovim.** Bundle the nvim config into `dev-tools` so borrowed boxes get the editor setup too, not just the binaries.

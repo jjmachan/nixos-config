@@ -1,6 +1,7 @@
 # jjmachan's home on any Linux box with nix that isn't the nixbox (a VPS, a
 # cloud dev VM): just the dev module, no repo checkout assumed.
-#   nix run home-manager -- switch --flake github:jjmachan/nixos-config#jjmachan@linux
+#   NIX_CONFIG='experimental-features = nix-command flakes' \
+#     nix run home-manager -- switch --flake github:jjmachan/nixos-config#jjmachan@linux
 { pkgs, ... }: {
   imports = [ ../../modules/home/dev ];
 
