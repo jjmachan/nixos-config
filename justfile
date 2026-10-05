@@ -20,7 +20,9 @@ sync:
         exit 1
     fi
     git remote get-url nixos >/dev/null 2>&1 || git remote add nixos "{{nixos}}:{{nixos_repo}}"
-    # The Mac owns these branches, so overwrite nixos's copy. git still refuses
-    # to touch whatever branch is checked out over there (e.g. main).
+    # Let a push to the branch checked out on nixos also update its files.
+    # git still refuses if that working tree has uncommitted changes.
+    ssh "{{nixos}}" git -C "{{nixos_repo}}" config receive.denyCurrentBranch updateInstead
+    # The Mac owns these branches, so overwrite nixos's copy.
     git push --force-with-lease nixos "$branch"
     echo "synced $branch → {{nixos}}:~/{{nixos_repo}}"
