@@ -30,6 +30,11 @@
 
     # Overlay to use claude-code from sadjow/claude-code-nix (hourly updates)
     claude-code-overlay = claude-code.overlays.default;
+
+    # nixos-25.11 defaults `docker` to docker_28, which nixpkgs marks insecure
+    # (unmaintained since Nov 2025). Point it at docker_29 so the host, the
+    # agent MicroVMs and anything using pkgs.docker all pick it up.
+    docker-overlay = final: prev: { docker = prev.docker_29; };
   in {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       # Expose flake inputs to modules (the agents need microvm + hermes-agent).
@@ -37,7 +42,7 @@
       modules = [
         ./system/configuration.nix
         {
-          nixpkgs.overlays = [ claude-code-overlay ];
+          nixpkgs.overlays = [ claude-code-overlay docker-overlay ];
         }
         home-manager.nixosModules.home-manager {
             home-manager.useGlobalPkgs = true;
