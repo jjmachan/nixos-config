@@ -21,7 +21,7 @@ Jellyseerr ──► Sonarr (TV) / Radarr (movies) ──► Prowlarr (indexers)
 - **qBittorrent** — the download client.
 - **Jellyfin** — streams the finished library (with hardware transcoding).
 
-All run as **native NixOS services** (no Docker), declared under `system/media/`.
+All run as **native NixOS services** (no Docker), declared under `hosts/nixbox/media/`.
 
 ## Services
 
@@ -38,16 +38,16 @@ All run as **native NixOS services** (no Docker), declared under `system/media/`
 ## Config layout
 
 The stack is a small, modular tree imported with one line (`./media`) from
-`system/configuration.nix`:
+`hosts/nixbox/configuration.nix`:
 
 | File | Holds |
 |---|---|
-| `system/media/default.nix` | Shared wiring: `media` group, `/srv/media` dirs, tailnet firewall, Tailscale Serve. Imports the rest. |
-| `system/media/jellyfin.nix` | Jellyfin + Intel Quick Sync hardware transcoding |
-| `system/media/arr.nix` | Sonarr + Radarr + Prowlarr (Bazarr commented-out) |
-| `system/media/download.nix` | qBittorrent |
-| `system/media/seerr.nix` | Seerr |
-| `system/media/tunnel.nix` | Cloudflare Tunnel — public access for Jellyfin + Jellyseerr |
+| `hosts/nixbox/media/default.nix` | Shared wiring: `media` group, `/srv/media` dirs, tailnet firewall, Tailscale Serve. Imports the rest. |
+| `hosts/nixbox/media/jellyfin.nix` | Jellyfin + Intel Quick Sync hardware transcoding |
+| `hosts/nixbox/media/arr.nix` | Sonarr + Radarr + Prowlarr (Bazarr commented-out) |
+| `hosts/nixbox/media/download.nix` | qBittorrent |
+| `hosts/nixbox/media/seerr.nix` | Seerr |
+| `hosts/nixbox/media/tunnel.nix` | Cloudflare Tunnel — public access for Jellyfin + Jellyseerr |
 
 ## Storage & permissions
 
@@ -174,7 +174,7 @@ After this, requesting a title in Jellyseerr flows all the way to Jellyfin autom
 ## Operating it
 
 ```bash
-# Rebuild after changing any system/media/*.nix
+# Rebuild after changing any hosts/nixbox/media/*.nix
 nh os switch                 # or: sudo nixos-rebuild switch --flake ~/.config/nixos#nixos
 
 # Service status / logs

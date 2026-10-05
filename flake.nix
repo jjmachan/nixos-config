@@ -35,12 +35,11 @@
     # Overlay to use claude-code from sadjow/claude-code-nix (hourly updates)
     claude-code-overlay = claude-code.overlays.default;
 
-  in {
-    nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
+    nixbox = nixpkgs.lib.nixosSystem {
       # Expose flake inputs to modules (the agents need microvm + hermes-agent).
       specialArgs = { inherit inputs; };
       modules = [
-        ./system/configuration.nix
+        ./hosts/nixbox/configuration.nix
         {
           nixpkgs.overlays = [ claude-code-overlay ];
         }
@@ -51,16 +50,18 @@
             home-manager.backupFileExtension = "hm-backup-2";
             home-manager.extraSpecialArgs = { inherit inputs; };
 
-            home-manager.users.jjmachan = {
-              home.stateVersion = "25.11";
-              imports = [
-                ./home.nix
-                worktrunk.homeModules.default
-              ];
-            };
+            home-manager.users.jjmachan = ./hosts/nixbox/home.nix;
           }
-        ./system/agents
+        ./hosts/nixbox/agents
       ];
+    };
+
+  in {
+    nixosConfigurations = {
+      inherit nixbox;
+      # nh and nixos-rebuild pick the output named after the hostname, which is
+      # still "nixos" until the host is renamed.
+      nixos = nixbox;
     };
   };
 }

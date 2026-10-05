@@ -30,9 +30,10 @@ nh os switch .
 | File | Purpose |
 |------|---------|
 | `flake.nix` | Flake inputs, overlays, module wiring |
-| `system/configuration.nix` | NixOS system config (desktop, boot, services) |
-| `system/hardware-configuration.nix` | Auto-generated hardware config |
-| `home.nix` | Home Manager config (packages, shell, programs) |
+| `hosts/nixbox/configuration.nix` | nixbox NixOS system config (desktop, boot, services) |
+| `hosts/nixbox/hardware-configuration.nix` | Auto-generated hardware config |
+| `hosts/nixbox/home.nix` | jjmachan's home on the nixbox: imports the dev module + nixbox-only bits |
+| `modules/home/dev/` | Shared terminal dev setup (packages, shell, editor, git, herdr) for every machine |
 | `dotfiles/` | App configs (neovim, zellij, zsh) |
 | `docs/` | Project documentation — see [media-stack.md](docs/media-stack.md) |
 
