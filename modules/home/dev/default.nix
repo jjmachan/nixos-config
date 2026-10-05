@@ -142,14 +142,16 @@ in {
     programs.gh = {
       enable = true;
       gitCredentialHelper.enable = true;
+      settings.aliases.co = "pr checkout";
     };
 
     programs.git = {
       enable = true;
-      ignores = [ ".envrc" ".direnv" ];
+      lfs.enable = true;
+      ignores = [ ".envrc" ".direnv" "**/.claude/settings.local.json" ];
       settings = {
         user = {
-          name = "Jithin James";
+          name = "jjmachan";
           email = "jamesjithin97@gmail.com";
         };
         init.defaultBranch = "main";
