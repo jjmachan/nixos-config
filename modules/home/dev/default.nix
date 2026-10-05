@@ -18,68 +18,7 @@ in {
   imports = [ inputs.worktrunk.homeModules.default ];
 
   config = {
-    home.packages = with pkgs; [
-      # terminal
-      yazi           # terminal file manager
-      lazygit        # terminal UI for git
-      fastfetch      # system info display (neofetch was removed from nixpkgs)
-      nnn            # terminal file manager
-      tmux           # terminal multiplexer
-      claude-code    # AI coding assistant
-      herdr          # terminal workspace manager for AI coding agents
-
-      # archives
-      zip
-      xz
-      unzip
-      p7zip
-
-      # utils
-      uv             # fast Python package manager
-      git
-      ripgrep        # recursively searches directories for a regex pattern
-      fd             # simple, fast alternative to find
-      zoxide         # smarter cd command
-      jq             # command-line JSON processor
-      yq-go          # yaml processor
-      eza            # modern replacement for ls
-      tree           # display directories as trees
-      file           # determine file type
-      which          # locate a command
-      gnused         # GNU sed
-      gnutar         # GNU tar
-      gawk           # GNU awk
-      zstd           # fast compression algorithm
-      gnupg          # GNU privacy guard
-
-      # networking tools
-      mtr            # network diagnostic tool
-      iperf3         # network bandwidth measurement
-      dnsutils       # dig + nslookup
-      ldns           # drill command (dig replacement)
-      aria2          # multi-protocol download utility
-      socat          # multipurpose relay (netcat replacement)
-      netcat-openbsd # nc -U: herdr-jump + worktrunk plugin talk to herdr's socket
-      nmap           # network discovery and security auditing
-      ipcalc         # IPv4/v6 address calculator
-
-      # monitoring
-      btop           # resource monitor (htop replacement)
-      iftop          # network monitoring
-      lsof           # list open files
-
-      # productivity
-      hugo           # static site generator
-      glow           # markdown previewer in terminal
-
-      # nix related
-      nix-output-monitor  # nix with detailed log output (nom command)
-
-      # misc
-      cowsay         # configurable talking cow
-    ] ++ lib.optionals pkgs.stdenv.isLinux [
-      wl-clipboard   # Wayland clipboard (neovim yank to system clipboard; macOS has pbcopy)
-    ];
+    home.packages = import ./packages.nix pkgs herdr;
 
     # Neovim — LazyVim manages its own plugins
     programs.neovim = {
@@ -138,6 +77,7 @@ in {
         dk = "docker";
         zshconfig = "nvim ~/.zshrc";
         clauded = "claude --dangerously-skip-permissions";
+        cld = "claude --dangerously-skip-permissions";
         feynman = "CLAUDE_CONFIG_DIR=~/.feynman claude";
         wsc = "wt switch --create --execute=claude";  # worktree + agent in one go
         wtm = "wt -C main";                           # run wt from a bare-repo parent
@@ -190,6 +130,13 @@ in {
     programs.direnv = {
       enable = true;
       nix-direnv.enable = true;
+    };
+
+    # nh — nicer nix CLI (`nh os switch`, `nh home switch`) with a diff before
+    # each switch; NH_FLAKE points it at this repo when there's a checkout.
+    programs.nh = {
+      enable = true;
+      flake = lib.mkIf (cfg.repoPath != null) cfg.repoPath;
     };
 
     programs.gh = {

@@ -2,6 +2,8 @@
 
 nixos := "jjmachan@nixos"
 nixos_repo := "workspace/personal/nixos-config"
+# Flakes stay off in /etc/nix/nix.conf on the Mac, so turn them on per call.
+nix := "nix --extra-experimental-features 'nix-command flakes'"
 
 # List recipes
 default:
@@ -26,3 +28,33 @@ sync:
     # The Mac owns these branches, so overwrite nixos's copy.
     git push --force-with-lease nixos "$branch"
     echo "synced $branch → {{nixos}}:~/{{nixos_repo}}"
+
+# Is the nixbox config in this checkout exactly what nixos is running?
+check-nixbox:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Evaluating only computes the store path; nothing gets built.
+    want="$({{nix}} eval --raw .#nixosConfigurations.nixbox.config.system.build.toplevel.outPath 2>/dev/null)"
+    have="$(ssh "{{nixos}}" readlink /run/current-system)"
+    echo "config:  $want"
+    echo "running: $have"
+    if [[ "$want" == "$have" ]]; then
+        echo "identical: switching would change nothing"
+    else
+        echo "differs: switching would change the nixbox"
+        exit 1
+    fi
+
+# Brew formulae whose commands nix now also provides (candidates for `brew uninstall`)
+brew-dupes:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    nixbin="$HOME/.nix-profile/bin"
+    for formula in $(brew leaves); do
+        for cmd in $(brew list --formula "$formula" | grep '/bin/' | xargs -n1 basename); do
+            if [[ -e "$nixbin/$cmd" ]]; then
+                echo "$formula  (nix has $cmd)"
+                break
+            fi
+        done
+    done
