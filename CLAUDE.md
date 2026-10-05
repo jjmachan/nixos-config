@@ -29,8 +29,9 @@ This is a single-host NixOS flake configuration for an x86_64-linux machine (hos
 - `flake.nix` — Defines inputs, overlay (claude-code from claude-code-nix), and wires together system + home-manager modules
 - `hosts/nixbox/configuration.nix` — NixOS system config: GNOME desktop, systemd-boot, PipeWire audio, Docker, Tailscale, OpenSSH, Suika service, passwordless sudo, lid-close-no-sleep (server use)
 - `hosts/nixbox/hardware-configuration.nix` — Auto-generated hardware config (Intel/KVM, EFI, NVMe)
-- `hosts/nixbox/home.nix` — jjmachan's home on the nixbox: imports the dev module, sets `dev.repoPath`, holds `home.stateVersion`
-- `modules/home/dev/` — shared terminal dev module (packages, neovim, zsh, zellij, git, gh, herdr, dotfile sourcing). Importing it turns it on; options live under `dev.*`
+- `hosts/nixbox/home.nix` — jjmachan's home on the nixbox: imports the dev + desktop modules, sets `dev.repoPath`, holds `home.stateVersion`, plus nixbox-only bits (Linux server diagnostics, `nrs` alias)
+- `modules/home/dev/` — shared terminal dev module (packages, neovim, zsh, zellij, git, gh, herdr, dotfile sourcing). Importing it turns it on; options live under `dev.*`. Linux-only bits go behind `lib.optionals pkgs.stdenv.isLinux`; machine-specific bits go in the host
+- `modules/home/desktop/` — GUI-side home config (ghostty: package on Linux, config everywhere)
 - `hosts/nixbox/{media,agents}/` — media stack and agent MicroVMs
 - `nixosConfigurations.nixbox` is the real output; `nixos` is an alias until the hostname is renamed (nh picks the output named after the hostname)
 

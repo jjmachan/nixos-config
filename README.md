@@ -34,6 +34,7 @@ nh os switch .
 | `hosts/nixbox/hardware-configuration.nix` | Auto-generated hardware config |
 | `hosts/nixbox/home.nix` | jjmachan's home on the nixbox: imports the dev module + nixbox-only bits |
 | `modules/home/dev/` | Shared terminal dev setup (packages, shell, editor, git, herdr) for every machine |
+| `modules/home/desktop/` | GUI-side home config (ghostty) for machines with a screen |
 | `dotfiles/` | App configs (neovim, zellij, zsh) |
 | `docs/` | Project documentation — see [media-stack.md](docs/media-stack.md) |
 

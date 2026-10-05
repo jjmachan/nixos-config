@@ -20,7 +20,6 @@ in {
   config = {
     home.packages = with pkgs; [
       # terminal
-      ghostty        # gpu-accelerated terminal
       yazi           # terminal file manager
       lazygit        # terminal UI for git
       fastfetch      # system info display (neofetch was removed from nixpkgs)
@@ -40,7 +39,6 @@ in {
       git
       ripgrep        # recursively searches directories for a regex pattern
       fd             # simple, fast alternative to find
-      wl-clipboard   # Wayland clipboard (needed for neovim yank to system clipboard)
       zoxide         # smarter cd command
       jq             # command-line JSON processor
       yq-go          # yaml processor
@@ -67,16 +65,8 @@ in {
 
       # monitoring
       btop           # resource monitor (htop replacement)
-      iotop          # IO monitoring
       iftop          # network monitoring
-      strace         # system call monitoring
-      ltrace         # library call monitoring
       lsof           # list open files
-      sysstat        # system performance tools
-      lm_sensors     # hardware sensors
-      ethtool        # ethernet device settings
-      pciutils       # lspci
-      usbutils       # lsusb
 
       # productivity
       hugo           # static site generator
@@ -87,6 +77,8 @@ in {
 
       # misc
       cowsay         # configurable talking cow
+    ] ++ lib.optionals pkgs.stdenv.isLinux [
+      wl-clipboard   # Wayland clipboard (neovim yank to system clipboard; macOS has pbcopy)
     ];
 
     # Neovim — LazyVim manages its own plugins
@@ -121,9 +113,6 @@ in {
       fi
     '');
 
-    # Ghostty
-    xdg.configFile."ghostty/config".source = ../../../dotfiles/ghostty/config;
-
     # Helper scripts: herdr-jump (prefix+j popup), wt-clone / wt-init (worktrunk
     # bare-repo layout)
     home.file.".local/bin" = {
@@ -147,7 +136,6 @@ in {
       shellAliases = {
         dc = "docker compose";
         dk = "docker";
-        nrs = "nh os switch";
         zshconfig = "nvim ~/.zshrc";
         clauded = "claude --dangerously-skip-permissions";
         feynman = "CLAUDE_CONFIG_DIR=~/.feynman claude";
