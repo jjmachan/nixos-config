@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# wt-clone — clone a git repo into the worktrunk bare-repo layout.
+#
+# Usage:
+#   wt-clone <repo-url|owner/repo> [target-dir]
+#
+# Produces:
+#   <target-dir>/
+#   ├── .bare/                 bare clone of the repo
+#   ├── .git                   file: "gitdir: ./.bare"
+#   └── <default-branch>/      worktree for the default branch (or unborn main)
+#
+# Also appends a [projects."<host>/<owner>/<repo>"] override to
+# ~/.config/worktrunk/config.toml so `wt switch --create <branch>` places new
+# worktrees as siblings of .bare (e.g. infra/<branch>/), matching the
+# research/ and ecom-bench-scraping/ layouts.
+
+set -euo pipefail
+
+die() { echo "wt-clone: $*" >&2; exit 1; }
+
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  echo "Usage: $(basename "$0") <repo-url|owner/repo> [target-dir]" >&2
+  exit 2
+fi
+
+url="$1"
+target="${2:-}"
+
+# Shorthand: "owner/repo" -> "git@github.com:owner/repo.git"
+if [[ "$url" != *:* && "$url" != *"://"* && "$url" == */* ]]; then
+  url="git@github.com:${url%.git}.git"
+fi
+
+# Derive target from URL if not provided.
+if [[ -z "$target" ]]; then
+  target="${url##*/}"
+  target="${target%.git}"
+fi
+
+[[ -z "$target" ]] && die "could not derive target directory from URL: $url"
+[[ -e "$target" ]] && die "target '$target' already exists"
+
+# Derive wt project id ("<host>/<owner>/<repo>") from URL.
+project_id_from_url() {
+  local u="$1"
+  u="${u%.git}"
+  if [[ "$u" == *://* ]]; then
+    local rest="${u#*://}"
+    rest="${rest#*@}"            # strip optional userinfo
+    printf '%s' "$rest"
+  elif [[ "$u" == *@*:* ]]; then
+    local host="${u#*@}"; host="${host%%:*}"
+    local path="${u#*:}"
+    printf '%s/%s' "$host" "$path"
+  else
+    printf '%s' "$u"
+  fi
+}
+project_id="$(project_id_from_url "$url")"
+
+echo ">> cloning $url -> $target/.bare"
+mkdir -p "$target"
+git clone --bare "$url" "$target/.bare"
+
+# Make the directory act as a worktree-host: .git points at the bare dir.
+printf 'gitdir: ./.bare\n' > "$target/.git"
+
+# `git clone --bare` sets a mirror-style refspec. Restore the normal origin
+# refspec so branches appear under refs/remotes/origin/* and refetch.
+git -C "$target/.bare" config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+git -C "$target/.bare" fetch origin --prune --tags
+
+# Ensure user config has a per-project worktree-path override matching the
+# other vibrantlabs repos (siblings of .bare).
+config_file="${XDG_CONFIG_HOME:-$HOME/.config}/worktrunk/config.toml"
+project_section="[projects.\"$project_id\"]"
+if [[ -f "$config_file" ]] && grep -Fq "$project_section" "$config_file"; then
+  echo ">> user config already has override for $project_id"
+else
+  mkdir -p "$(dirname "$config_file")"
+  {
+    [[ -s "$config_file" ]] && printf '\n'
+    printf '%s\n' "$project_section"
+    printf '%s\n' 'worktree-path = "{{ repo_path }}/../{{ branch | sanitize }}"'
+  } >> "$config_file"
+  echo ">> added worktree-path override for $project_id to $config_file"
+fi
+
+# Resolve default branch from origin/HEAD; fall back to main, then master.
+default_branch="$(git -C "$target/.bare" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||' || true)"
+if [[ -z "$default_branch" ]]; then
+  for candidate in main master; do
+    if git -C "$target/.bare" show-ref --verify --quiet "refs/remotes/origin/$candidate"; then
+      default_branch="$candidate"
+      break
+    fi
+  done
+fi
+
+# Empty repo: no remote HEAD, no branches. Create an unborn `main` worktree.
+if [[ -z "$default_branch" ]]; then
+  default_branch="main"
+  echo ">> empty repo detected; creating unborn '$default_branch' worktree"
+  git -C "$target/.bare" symbolic-ref HEAD "refs/heads/$default_branch"
+  git -C "$target" worktree add --orphan -b "$default_branch" "$default_branch"
+else
+  echo ">> adding worktree: $default_branch"
+  if git -C "$target/.bare" show-ref --verify --quiet "refs/heads/$default_branch"; then
+    git -C "$target" worktree add "$default_branch" "$default_branch"
+  else
+    git -C "$target" worktree add -b "$default_branch" "$default_branch" "origin/$default_branch"
+  fi
+fi
+
+cat <<EOF
+
+Done.
+
+  $target/
+  ├── .bare/
+  ├── .git           -> ./.bare
+  └── $default_branch/
+
+Next:
+  cd $target/$default_branch
+  wt list
+EOF

@@ -2,14 +2,21 @@
   description = "A very basic flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-26.05";
     claude-code.url = "github:sadjow/claude-code-nix";
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     worktrunk = {
       url = "github:max-sixty/worktrunk";
+    };
+    # herdr — terminal workspace manager for AI coding agents (not in nixpkgs).
+    # Follows ours: 26.05 ships the zig 0.16 its build needs (rust comes from
+    # its own rust-overlay pin).
+    herdr = {
+      url = "github:herdrdev/herdr";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     # MicroVM host for the agents (Penny, Alfred, Iris).
     microvm = {
@@ -21,17 +28,13 @@
     hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
-  outputs = inputs@{ self, nixpkgs, claude-code, home-manager, worktrunk, microvm, hermes-agent }:
+  outputs = inputs@{ self, nixpkgs, claude-code, home-manager, worktrunk, herdr, microvm, hermes-agent }:
   let
     system = "x86_64-linux";
 
     # Overlay to use claude-code from sadjow/claude-code-nix (hourly updates)
     claude-code-overlay = claude-code.overlays.default;
 
-    # nixos-25.11 defaults `docker` to docker_28, which nixpkgs marks insecure
-    # (unmaintained since Nov 2025). Point it at docker_29 so the host, the
-    # agent MicroVMs and anything using pkgs.docker all pick it up.
-    docker-overlay = final: prev: { docker = prev.docker_29; };
   in {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       # Expose flake inputs to modules (the agents need microvm + hermes-agent).
@@ -39,13 +42,14 @@
       modules = [
         ./system/configuration.nix
         {
-          nixpkgs.overlays = [ claude-code-overlay docker-overlay ];
+          nixpkgs.overlays = [ claude-code-overlay ];
         }
         home-manager.nixosModules.home-manager {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
 
             home-manager.backupFileExtension = "hm-backup-2";
+            home-manager.extraSpecialArgs = { inherit inputs; };
 
             home-manager.users.jjmachan = {
               home.stateVersion = "25.11";

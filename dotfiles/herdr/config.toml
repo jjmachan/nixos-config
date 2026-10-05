@@ -1,0 +1,146 @@
+# herdr config — linked to ~/.config/herdr/config.toml by home-manager (home.nix)
+# Full option list (148 keys): `herdr --default-config`
+# After `nh os switch .`, reload a running server: `herdr server reload-config`
+
+onboarding = false
+
+[theme]
+# Built-in themes: catppuccin, terminal, tokyo-night, dracula, nord,
+#                  gruvbox, one-dark, solarized, kanagawa, rose-pine, vesper
+name = "tokyo-night"          # matches ghostty `theme = tokyonight` + nvim tokyonight-night
+# auto_switch = false
+# dark_name = "tokyo-night"
+# light_name = "catppuccin-latte"
+
+[terminal]
+# default_shell = ""          # empty => $SHELL, then /bin/sh
+# shell_mode = "auto"         # "auto" | "login" | "non_login"
+new_cwd = "follow"            # new panes/tabs inherit the focused pane's cwd
+
+[update]
+# channel = "stable"          # "stable" | "preview"
+# version_check = true
+
+[keys]
+prefix = "ctrl+g"             # same mode-leader as zellij's Ctrl-g
+
+# Direct (no-prefix) bindings — mirrors zellij's `shared_among "normal" "locked"`.
+# Safe here: ghostty sets macos-option-as-alt = true, and nothing in zsh/.zshrc or
+# zsh/key-bindings.zsh binds alt+hjkl or ctrl+g (fzf uses ^T, \ec, \e-space).
+focus_pane_left  = "alt+h"
+focus_pane_down  = "alt+j"
+focus_pane_up    = "alt+k"
+focus_pane_right = "alt+l"
+split_vertical   = 'alt+\'      # TOML literal string: no escaping of the backslash
+split_horizontal = "alt+minus"
+switch_tab       = "alt+1..9"
+# Workspaces get the prefix numbers (herdr's default there is prefix+shift+1..9);
+# prefix+1..9 is free because switch_tab was moved off it onto alt.
+switch_workspace = "prefix+1..9"
+
+# Reorder the active tab, mirroring zellij's Alt+i / Alt+o (MoveTab left/right).
+# Unlike zellij these wrap around at either end. Requires herdr > 0.7.3; older
+# builds ignore unknown keys, so leaving them here is harmless.
+move_tab_previous = "alt+i"
+move_tab_next     = "alt+o"
+
+# Prefix-mode
+# "t" for tab, zellij-style — herdr's default trio is c/n/p (tmux: create/next/previous);
+# prefix+n belongs to the nvim popup below. Tab cycling is unset; alt+1..9 switches tabs.
+new_tab             = "prefix+t"   # displaced from prefix+n by the nvim popup
+next_tab            = ""
+previous_tab        = ""
+close_tab           = "prefix+shift+x"
+rename_tab          = "prefix+shift+r"   # herdr's default is prefix+shift+t, now free
+close_pane          = "prefix+x"
+zoom                = "prefix+z"
+resize_mode         = "prefix+r"
+toggle_sidebar      = "prefix+s"   # herdr's default is prefix+b, which is now free
+settings            = "prefix+comma"   # displaced by toggle_sidebar; comma is the usual settings key
+cycle_pane_next     = "prefix+tab"
+cycle_pane_previous = "prefix+shift+tab"
+detach              = "prefix+q"
+edit_scrollback     = "prefix+e"
+reload_config       = ""   # displaced by rename_tab; reload with `herdr server reload-config`
+
+goto                = "prefix+p"    # native tree overlay; prefix+j opens the fzf jumper, prefix+g the lazygit popup
+new_worktree        = ""           # prefix+shift+g runs the worktrunk plugin instead
+
+# Left at herdr defaults: help = "prefix+?",
+# workspace_picker = "prefix+w", new_workspace = "prefix+shift+n",
+# rename_workspace = "prefix+shift+w", close_workspace = "prefix+shift+d",
+# rename_pane = "prefix+shift+p".
+#
+# Zellij features with no herdr equivalent are dropped rather than approximated:
+# swap layouts (Alt+[ / Alt+]) and lock mode (Ctrl+g toggle). Zellij's floating
+# panes are covered by the popup commands below.
+
+# Navigate-mode local movement (mode-scoped, no prefix; arrows always work too)
+navigate_pane_down = "j"
+navigate_pane_up   = "k"
+
+# Legacy fallback if `switch_tab = "alt+1..9"` is ever rejected at load:
+# [keys.indexed]
+# tabs = "alt"
+
+# [worktrees] stays at defaults: worktrees are created by the worktrunk plugin
+# (dotfiles/herdr-plugins/worktrunk), which honours wt's per-project path templates.
+
+# Floating overlays — session-modal, tiled layout untouched, cwd inherited from
+# the focused pane. Close by quitting the app inside (lazygit `q`, nvim `:q`).
+# While a popup is open every key goes to it, so prefix chords are inert.
+[[keys.command]]
+key = "prefix+g"
+type = "popup"
+command = "lazygit"
+description = "lazygit"
+width = "90%"
+height = "90%"
+
+[[keys.command]]
+key = "prefix+n"
+type = "popup"
+command = "nvim . -c \"lua vim.schedule(function() LazyVim.pick('files', { root = false })() end)\""
+description = "editor"
+width = "90%"
+height = "90%"
+
+[[keys.command]]
+key = "prefix+j"
+type = "popup"
+command = "herdr-jump"
+description = "jump to agent/pane"
+width = "80%"
+height = "70%"
+
+# Worktrunk: prompt for a branch, create its worktree, open it as a tab here.
+# Linked from dotfiles/herdr-plugins/worktrunk by home-manager (home.nix).
+[[keys.command]]
+key = "prefix+shift+g"
+type = "plugin_action"
+command = "jjmachan.worktrunk.new"
+description = "new worktree"
+
+[ui]
+# sidebar_width = 26
+sidebar_collapsed_mode = "hidden"   # zero-width when collapsed; "compact" keeps a status rail
+pane_gaps = true                    # keep splits visually separated (herdr default)
+tab_bar_position = "bottom"         # tab row below the panes; requires herdr >= 0.8.0 (#2117)
+hide_tab_bar_when_single_tab = true
+prompt_new_tab_name = false   # zellij created tabs immediately; rename via prefix+shift+r
+accent = "cyan"
+
+[ui.toast]
+delivery = "herdr"            # "off" | "herdr" | "terminal" | "system"
+# delay_seconds = 1
+
+[session]
+resume_agents_on_restore = true
+
+[experimental]
+# Replay recent pane screen contents after a full server restart (e.g. a reboot).
+# Restores the visible text only — the original processes are gone either way.
+pane_history = true
+
+[advanced]
+# scrollback_limit_bytes = 10000000

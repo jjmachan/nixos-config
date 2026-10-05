@@ -48,8 +48,8 @@ To move the repo later, just update the symlink — no rebuild needed.
 
 ## Flake Inputs
 
-- **nixpkgs** — NixOS 25.11 (stable)
-- **home-manager** — 25.11, integrated as a NixOS module
+- **nixpkgs** — NixOS 26.05 (stable)
+- **home-manager** — 26.05, integrated as a NixOS module
 - **claude-code-nix** — Hourly auto-updated Claude Code package
 - **suika** — Local MicroVM module
 - **worktrunk** — Git worktree management for parallel AI agents

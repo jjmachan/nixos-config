@@ -25,6 +25,7 @@
   # };
 
   # New files land group-writable so the whole stack (and Jellyfin) can use them.
-  systemd.services.sonarr.serviceConfig.UMask = "0002";
-  systemd.services.radarr.serviceConfig.UMask = "0002";
+  # mkForce: since 26.05 the modules harden the units and set UMask = "0022".
+  systemd.services.sonarr.serviceConfig.UMask = lib.mkForce "0002";
+  systemd.services.radarr.serviceConfig.UMask = lib.mkForce "0002";
 }
