@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# wt-init — initialize a fresh repo in the worktrunk bare-repo layout.
+#
+# Usage:
+#   wt-init                           # init $PWD (must be empty)
+#   wt-init <dir>                     # init new <dir> (must not exist)
+#   wt-init <dir> <repo-url|owner/repo>
+#                                     # same as above + add origin + wt config override
+#
+# Produces:
+#   <target>/
+#   ├── .bare/         bare repo
+#   ├── .git           file: "gitdir: ./.bare"
+#   └── main/          unborn `main` worktree
+#
+# When <repo-url> is given, also writes a [projects."<host>/<owner>/<repo>"]
+# override to ~/.config/worktrunk/config.toml so `wt switch --create <branch>`
+# places new worktrees as siblings of .bare.
+
+set -euo pipefail
+
+die() { echo "wt-init: $*" >&2; exit 1; }
+
+if [[ $# -gt 2 ]]; then
+  echo "Usage: $(basename "$0") [<dir>] [<repo-url|owner/repo>]" >&2
+  exit 2
+fi
+
+target="${1:-.}"
+url="${2:-}"
+
+# Shorthand: "owner/repo" -> "git@github.com:owner/repo.git"
+if [[ -n "$url" && "$url" != *:* && "$url" != *"://"* && "$url" == */* ]]; then
+  url="git@github.com:${url%.git}.git"
+fi
+
+# Target must either be $PWD and empty, or not yet exist.
+if [[ "$target" == "." || "$target" == "$PWD" ]]; then
+  target="$PWD"
+  # Reject if any entries exist (including dotfiles).
+  if [[ -n "$(ls -A "$target" 2>/dev/null)" ]]; then
+    die "current directory is not empty: $target"
+  fi
+else
+  [[ -e "$target" ]] && die "target '$target' already exists"
+  mkdir -p "$target"
+fi
+
+echo ">> git init --bare $target/.bare"
+git init --bare "$target/.bare" >/dev/null
+
+# Worktree-host: .git points at the bare dir.
+printf 'gitdir: ./.bare\n' > "$target/.git"
+
+# Point bare HEAD at unborn main so the orphan worktree inherits it cleanly.
+git -C "$target/.bare" symbolic-ref HEAD refs/heads/main
+
+echo ">> creating unborn 'main' worktree"
+git -C "$target" worktree add --orphan -b main main
+
+# Optional remote + wt config override.
+if [[ -n "$url" ]]; then
+  echo ">> adding origin: $url"
+  git -C "$target/.bare" remote add origin "$url"
+  git -C "$target/.bare" config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+
+  project_id_from_url() {
+    local u="$1"
+    u="${u%.git}"
+    if [[ "$u" == *://* ]]; then
+      local rest="${u#*://}"
+      rest="${rest#*@}"
+      printf '%s' "$rest"
+    elif [[ "$u" == *@*:* ]]; then
+      local host="${u#*@}"; host="${host%%:*}"
+      local path="${u#*:}"
+      printf '%s/%s' "$host" "$path"
+    else
+      printf '%s' "$u"
+    fi
+  }
+  project_id="$(project_id_from_url "$url")"
+
+  config_file="${XDG_CONFIG_HOME:-$HOME/.config}/worktrunk/config.toml"
+  project_section="[projects.\"$project_id\"]"
+  if [[ -f "$config_file" ]] && grep -Fq "$project_section" "$config_file"; then
+    echo ">> user config already has override for $project_id"
+  else
+    mkdir -p "$(dirname "$config_file")"
+    {
+      [[ -s "$config_file" ]] && printf '\n'
+      printf '%s\n' "$project_section"
+      printf '%s\n' 'worktree-path = "{{ repo_path }}/../{{ branch | sanitize }}"'
+    } >> "$config_file"
+    echo ">> added worktree-path override for $project_id to $config_file"
+  fi
+fi
+
+cat <<EOF
+
+Done.
+
+  $target/
+  ├── .bare/
+  ├── .git           -> ./.bare
+  └── main/
+
+Next:
+  cd $target/main
+  wt list
+EOF

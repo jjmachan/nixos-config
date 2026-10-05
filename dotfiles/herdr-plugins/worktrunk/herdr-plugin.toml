@@ -1,0 +1,29 @@
+# worktrunk — create a git worktree with `wt` and open it as a herdr tab.
+#
+# Linked (not installed) from this repo:
+#   herdr plugin link ~/.config/nixos/dotfiles/herdr-plugins/worktrunk
+# (home.nix runs this on activation; see the herdr section there.)
+#
+# Keys can only bind actions, and actions run headless — so the action just
+# opens the popup pane, which is the half that can prompt.
+
+id = "jjmachan.worktrunk"
+name = "Worktrunk"
+version = "0.1.0"
+min_herdr_version = "0.8.2"
+description = "Create a worktrunk worktree and open it as a tab"
+platforms = ["macos", "linux"]
+
+[[actions]]
+id = "new"
+title = "New worktree"
+contexts = ["workspace"]
+command = ["bash", "open-popup.sh"]
+
+[[panes]]
+id = "new-popup"
+title = "New worktree"
+placement = "popup"
+width = "70%"
+height = "70%"   # fzf needs room for the branch list
+command = ["bash", "new-worktree.sh"]

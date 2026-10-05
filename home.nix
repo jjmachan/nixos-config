@@ -1,4 +1,6 @@
-{pkgs, lib, ...}: {
+{pkgs, lib, config, inputs, ...}: let
+  herdr = inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.default;
+in {
   home.packages = with pkgs; [
     # terminal
     ghostty        # gpu-accelerated terminal
@@ -8,6 +10,7 @@
     nnn            # terminal file manager
     tmux           # terminal multiplexer
     claude-code    # AI coding assistant
+    herdr          # terminal workspace manager for AI coding agents
 
     # archives
     zip
@@ -41,6 +44,7 @@
     ldns           # drill command (dig replacement)
     aria2          # multi-protocol download utility
     socat          # multipurpose relay (netcat replacement)
+    netcat-openbsd # nc -U: herdr-jump + worktrunk plugin talk to herdr's socket
     nmap           # network discovery and security auditing
     ipcalc         # IPv4/v6 address calculator
 
@@ -79,6 +83,34 @@
   programs.zellij.enable = true;
   xdg.configFile."zellij/config.kdl".source = ./dotfiles/zellij/config.kdl;
 
+  # Herdr — link only config.toml: herdr writes logs, sockets and session
+  # state into ~/.config/herdr, so the directory itself must stay writable.
+  xdg.configFile."herdr/config.toml".source = ./dotfiles/herdr/config.toml;
+
+  # Herdr plugins are registered with `herdr plugin link`, which records an
+  # absolute path in ~/.config/herdr/plugins.json. Point it at the repo (via the
+  # ~/.config/nixos symlink) rather than the store, so the path survives rebuilds
+  # and script edits take effect without one.
+  home.activation.herdrPlugins = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    plugin="${config.xdg.configHome}/nixos/dotfiles/herdr-plugins/worktrunk"
+    if [ -f "$plugin/herdr-plugin.toml" ] \
+      && ! ${pkgs.gnugrep}/bin/grep -qs '"jjmachan.worktrunk"' "${config.xdg.configHome}/herdr/plugins.json"; then
+      run ${herdr}/bin/herdr plugin link "$plugin" \
+        || warnEcho "herdr: could not link the worktrunk plugin; run: herdr plugin link $plugin"
+    fi
+  '';
+
+  # Ghostty
+  xdg.configFile."ghostty/config".source = ./dotfiles/ghostty/config;
+
+  # Helper scripts: herdr-jump (prefix+j popup), wt-clone / wt-init (worktrunk
+  # bare-repo layout)
+  home.file.".local/bin" = {
+    source = ./dotfiles/bin;
+    recursive = true;
+  };
+  home.sessionPath = [ "$HOME/.local/bin" ];
+
   # Zsh
   programs.zsh = {
     enable = true;
@@ -97,6 +129,9 @@
       nrs = "nh os switch";
       zshconfig = "nvim ~/.zshrc";
       clauded = "claude --dangerously-skip-permissions";
+      feynman = "CLAUDE_CONFIG_DIR=~/.feynman claude";
+      wsc = "wt switch --create --execute=claude";  # worktree + agent in one go
+      wtm = "wt -C main";                           # run wt from a bare-repo parent
     };
 
     initContent = lib.mkMerge [

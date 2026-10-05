@@ -11,6 +11,9 @@
     worktrunk = {
       url = "github:max-sixty/worktrunk";
     };
+    # herdr — terminal workspace manager for AI coding agents (not in nixpkgs).
+    # Keep its own nixpkgs: the build needs nixos-unstable's zig + rust-overlay.
+    herdr.url = "github:herdrdev/herdr";
     # MicroVM host for the agents (Penny, Alfred, Iris).
     microvm = {
       url = "github:astro/microvm.nix";
@@ -21,7 +24,7 @@
     hermes-agent.url = "github:NousResearch/hermes-agent";
   };
 
-  outputs = inputs@{ self, nixpkgs, claude-code, home-manager, worktrunk, microvm, hermes-agent }:
+  outputs = inputs@{ self, nixpkgs, claude-code, home-manager, worktrunk, herdr, microvm, hermes-agent }:
   let
     system = "x86_64-linux";
 
@@ -41,6 +44,7 @@
             home-manager.useUserPackages = true;
 
             home-manager.backupFileExtension = "hm-backup-2";
+            home-manager.extraSpecialArgs = { inherit inputs; };
 
             home-manager.users.jjmachan = {
               home.stateVersion = "25.11";

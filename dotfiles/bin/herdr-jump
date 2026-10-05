@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# herdr-jump — fuzzy-jump to any herdr agent or pane.
+#
+# Usage:
+#   herdr-jump                       # pick from a list, Enter focuses that pane
+#
+# Bound to prefix+j as a herdr popup (see dotfiles/herdr/config.toml).
+# Lists every pane across all workspaces with its agent state, ordered most
+# recently left first — fzf's default layout draws that row against the prompt,
+# so jumping back to where you came from is Enter. Panes you have not left yet
+# follow, attention-first:
+#
+#   ● ITSMBench  › feat/world-gen › claude · blocked   ✳ world-seed-gen
+#   ◐ mydotfiles › herdr-config   › claude · working   ◐ popup-windows
+#   ○ mydotfiles › gpu-access     › pi     · idle      π - main
+#   · mydotfiles › competition-analysis › shell
+#
+# Focus goes over herdr's newline-delimited JSON socket API (pane.focus), since
+# the `herdr pane focus` CLI only moves by direction, not to a pane id.
+
+set -euo pipefail
+
+die() { echo "herdr-jump: $*" >&2; exit 1; }
+
+for tool in herdr jq fzf nc; do
+  command -v "$tool" >/dev/null 2>&1 || die "$tool is required but not installed"
+done
+
+socket="${HERDR_SOCKET_PATH:-${XDG_CONFIG_HOME:-$HOME/.config}/herdr/herdr.sock}"
+[[ -S "$socket" ]] || die "herdr socket not found at $socket (is the server running?)"
+
+# Jump history: pane ids, most recently left LAST. herdr's API has no
+# focus-recency of its own, so the trail is kept here.
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/herdr-jump"
+history_file="$state_dir/history"
+mkdir -p "$state_dir"
+
+# {"w7:p1": 0, "w8:p6": 1, …} — 0 is the most recently left pane.
+history_json="$(
+  if [[ -s "$history_file" ]]; then
+    tac <"$history_file" 2>/dev/null || tail -r "$history_file"
+  fi | jq -R . | jq -s 'to_entries | map({key: .value, value: .key}) | from_entries'
+)"
+[[ -n "$history_json" ]] || history_json='{}'
+
+# One call each; `herdr <thing> list` prints a single JSON-RPC response line.
+panes="$(herdr pane list)"       || die "could not list panes"
+agents="$(herdr agent list)"     || die "could not list agents"
+spaces="$(herdr workspace list)" || die "could not list workspaces"
+tabs="$(herdr tab list)"         || die "could not list tabs"
+
+# Join the four listings into display rows. The pane_id rides along as a second
+# tab-separated field; fzf hides it from view but hands it back on selection.
+rows="$(jq -rn \
+  --argjson panes "$panes" \
+  --argjson agents "$agents" \
+  --argjson spaces "$spaces" \
+  --argjson tabs "$tabs" \
+  --argjson hist "$history_json" '
+  def color(c): "\u001b[" + c + "m";
+  def reset: "\u001b[0m";
+
+  ($agents.result.agents // [] | map({key: .pane_id, value: .}) | from_entries) as $byPane |
+  ($spaces.result.workspaces // [] | map({key: .workspace_id, value: .label}) | from_entries) as $wsLabel |
+  ($tabs.result.tabs // [] | map({key: .tab_id, value: .label}) | from_entries) as $tabLabel |
+
+  ($panes.result.panes // [])
+  | map(
+      . as $p
+      | ($byPane[$p.pane_id] // null) as $a
+      | (if $a then ($a.agent_status // "unknown") else "shell" end) as $status
+      | {
+          pane_id: $p.pane_id,
+          # Where it sits in the jump trail: 0 = most recently left.
+          seen: ($hist[$p.pane_id] // 9999),
+          # The pane you are in right now is never a useful target.
+          here: ($p.focused == true),
+          rank: (if $status == "blocked" then 0
+                 elif $status == "working" then 1
+                 elif $status == "idle" then 2
+                 elif $status == "shell" then 4
+                 else 3 end),
+          glyph: (if $status == "blocked" then "●"
+                  elif $status == "working" then "◐"
+                  elif $status == "idle" then "○"
+                  else "·" end),
+          hue: (if $status == "blocked" then "31"
+                elif $status == "working" then "33"
+                elif $status == "idle" then "32"
+                else "90" end),
+          ws: ($wsLabel[$p.workspace_id] // $p.workspace_id),
+          tab: ($tabLabel[$p.tab_id] // $p.tab_id),
+          who: (if $a then ($a.agent // "agent") else "shell" end),
+          status: $status,
+          title: (if $a then (($a.terminal_title_stripped // $a.terminal_title // "") | .[0:40]) else "" end)
+        }
+    )
+  | sort_by(.here, .seen, .rank, .ws, .tab)
+  | .[]
+  | color(.hue) + .glyph + reset + " "
+    + color("1") + (.ws | .[0:14]) + reset
+    + " › " + (.tab | .[0:22])
+    + " › " + color(.hue) + .who + reset
+    + (if .status == "shell" then "" else " · " + color(.hue) + .status + reset end)
+    + (if .title == "" then "" else "  " + color("90") + .title + reset end)
+    + (if .here then "  " + color("90") + "(here)" + reset
+       elif .seen == 0 then "  " + color("36") + "last" + reset
+       else "" end)
+    + "\t" + .pane_id
+')"
+
+[[ -n "$rows" ]] || die "no panes found"
+
+# fzf exits 130 when cancelled with esc/ctrl-c; that is not an error.
+selected="$(printf '%s\n' "$rows" | fzf \
+  --ansi \
+  --delimiter='\t' \
+  --with-nth=1 \
+  --prompt='jump > ' \
+  --header='enter jump   esc cancel' \
+  --height=100% \
+  --preview='herdr pane read {2} --lines 40 --format ansi 2>/dev/null || echo "(no output)"' \
+  --preview-window='right,50%,border-left')" || exit 0
+
+pane_id="${selected##*$'\t'}"
+[[ -n "$pane_id" ]] || die "could not determine pane id from selection"
+
+response="$(printf '%s\n' \
+  "{\"id\":\"herdr-jump\",\"method\":\"pane.focus\",\"params\":{\"pane_id\":\"$pane_id\"}}" \
+  | nc -U "$socket")" || die "could not reach herdr at $socket"
+
+if jq -e 'has("error")' >/dev/null 2>&1 <<<"$response"; then
+  die "focus failed: $(jq -c '.error' <<<"$response")"
+fi
+
+# Remember where we jumped FROM, so next time it sits against the prompt.
+from_pane="$(jq -r '.result.panes[] | select(.focused) | .pane_id' <<<"$panes" 2>/dev/null || true)"
+if [[ -n "$from_pane" && "$from_pane" != "$pane_id" ]]; then
+  { grep -vxF "$from_pane" "$history_file" 2>/dev/null || true; echo "$from_pane"; } \
+    | tail -n 200 > "$history_file.tmp" && mv "$history_file.tmp" "$history_file"
+fi
