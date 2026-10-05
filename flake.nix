@@ -30,17 +30,42 @@
 
   outputs = inputs@{ self, nixpkgs, claude-code, home-manager, worktrunk, herdr, microvm, hermes-agent }:
   let
-    system = "x86_64-linux";
-
     # Overlay to use claude-code from sadjow/claude-code-nix (hourly updates)
     claude-code-overlay = claude-code.overlays.default;
 
-  in {
-    nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
+    # Standalone home-manager (the Mac, other Linux boxes) has no NixOS to hand
+    # it pkgs, so build one per system with the same overlay and unfree setting.
+    pkgsFor = system: import nixpkgs {
+      inherit system;
+      overlays = [ claude-code-overlay ];
+      config.allowUnfree = true;
+    };
+
+    mkHome = system: module: home-manager.lib.homeManagerConfiguration {
+      pkgs = pkgsFor system;
+      extraSpecialArgs = { inherit inputs; };
+      modules = [ module ];
+    };
+
+    # The dev module's packages plus the programs it configures, as one bundle
+    # for boxes that should get the tools without a home-manager takeover:
+    #   nix shell github:jjmachan/nixos-config#dev-tools
+    devTools = system: let
+      pkgs = pkgsFor system;
+      herdr' = herdr.packages.${system}.default;
+    in pkgs.buildEnv {
+      name = "dev-tools";
+      paths = import ./modules/home/dev/packages.nix pkgs herdr' ++ (with pkgs; [
+        neovim zellij zsh fzf direnv gh git nh
+        worktrunk.packages.${system}.default
+      ]);
+    };
+
+    nixbox = nixpkgs.lib.nixosSystem {
       # Expose flake inputs to modules (the agents need microvm + hermes-agent).
       specialArgs = { inherit inputs; };
       modules = [
-        ./system/configuration.nix
+        ./hosts/nixbox/configuration.nix
         {
           nixpkgs.overlays = [ claude-code-overlay ];
         }
@@ -51,16 +76,23 @@
             home-manager.backupFileExtension = "hm-backup-2";
             home-manager.extraSpecialArgs = { inherit inputs; };
 
-            home-manager.users.jjmachan = {
-              home.stateVersion = "25.11";
-              imports = [
-                ./home.nix
-                worktrunk.homeModules.default
-              ];
-            };
+            home-manager.users.jjmachan = ./hosts/nixbox/home.nix;
           }
-        ./system/agents
+        ./hosts/nixbox/agents
       ];
     };
+
+  in {
+    # nh and nixos-rebuild pick the output named after the hostname.
+    nixosConfigurations = { inherit nixbox; };
+
+    homeConfigurations = {
+      "jjmachan@macbook" = mkHome "aarch64-darwin" ./hosts/macbook/home.nix;
+      "jjmachan@linux" = mkHome "x86_64-linux" ./hosts/linux/home.nix;
+    };
+
+    packages = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (system: {
+      dev-tools = devTools system;
+    });
   };
 }

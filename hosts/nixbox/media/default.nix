@@ -50,8 +50,8 @@
   services.tailscale.permitCertUid = "root";
 
   # Expose the two user-facing apps over HTTPS on the tailnet.
-  #   https://nixos.tail66a220.ts.net        -> Jellyfin
-  #   https://nixos.tail66a220.ts.net:5055   -> Seerr
+  #   https://nixbox.tail66a220.ts.net        -> Jellyfin
+  #   https://nixbox.tail66a220.ts.net:5055   -> Seerr
   # Driven from a oneshot on purpose: 26.05's services.tailscale.serve configures
   # Tailscale *Services* (svc:<name>, admin-approved, own hostname), not serving
   # on this node's own name, so it is not a replacement for this.

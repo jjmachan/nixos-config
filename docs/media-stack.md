@@ -21,7 +21,7 @@ Jellyseerr ──► Sonarr (TV) / Radarr (movies) ──► Prowlarr (indexers)
 - **qBittorrent** — the download client.
 - **Jellyfin** — streams the finished library (with hardware transcoding).
 
-All run as **native NixOS services** (no Docker), declared under `system/media/`.
+All run as **native NixOS services** (no Docker), declared under `hosts/nixbox/media/`.
 
 ## Services
 
@@ -38,16 +38,16 @@ All run as **native NixOS services** (no Docker), declared under `system/media/`
 ## Config layout
 
 The stack is a small, modular tree imported with one line (`./media`) from
-`system/configuration.nix`:
+`hosts/nixbox/configuration.nix`:
 
 | File | Holds |
 |---|---|
-| `system/media/default.nix` | Shared wiring: `media` group, `/srv/media` dirs, tailnet firewall, Tailscale Serve. Imports the rest. |
-| `system/media/jellyfin.nix` | Jellyfin + Intel Quick Sync hardware transcoding |
-| `system/media/arr.nix` | Sonarr + Radarr + Prowlarr (Bazarr commented-out) |
-| `system/media/download.nix` | qBittorrent |
-| `system/media/seerr.nix` | Seerr |
-| `system/media/tunnel.nix` | Cloudflare Tunnel — public access for Jellyfin + Jellyseerr |
+| `hosts/nixbox/media/default.nix` | Shared wiring: `media` group, `/srv/media` dirs, tailnet firewall, Tailscale Serve. Imports the rest. |
+| `hosts/nixbox/media/jellyfin.nix` | Jellyfin + Intel Quick Sync hardware transcoding |
+| `hosts/nixbox/media/arr.nix` | Sonarr + Radarr + Prowlarr (Bazarr commented-out) |
+| `hosts/nixbox/media/download.nix` | qBittorrent |
+| `hosts/nixbox/media/seerr.nix` | Seerr |
+| `hosts/nixbox/media/tunnel.nix` | Cloudflare Tunnel — public access for Jellyfin + Jellyseerr |
 
 ## Storage & permissions
 
@@ -80,14 +80,14 @@ the two user-facing apps. Nothing is exposed to the LAN, and no inbound ports ar
 
 - The admin UIs are opened **only on the `tailscale0` interface**
   (`networking.firewall.interfaces."tailscale0".allowedTCPPorts`), not via each service's
-  `openFirewall`. Reach them over the tailnet at `http://nixos:<port>` (e.g.
-  `http://nixos:8989` for Sonarr).
+  `openFirewall`. Reach them over the tailnet at `http://nixbox:<port>` (e.g.
+  `http://nixbox:8989` for Sonarr).
 - The two user-facing apps are fronted by **Tailscale Serve** for HTTPS:
 
 | App | URL |
 |---|---|
-| Jellyfin | `https://nixos.tail66a220.ts.net` |
-| Jellyseerr | `https://nixos.tail66a220.ts.net:5055` |
+| Jellyfin | `https://nixbox.tail66a220.ts.net` |
+| Jellyseerr | `https://nixbox.tail66a220.ts.net:5055` |
 
 Serve is set up by a `tailscale-serve` systemd oneshot in `default.nix` (with a retry
 loop so it survives `tailscaled` restarting during a rebuild).
@@ -163,18 +163,18 @@ The NixOS config installs and runs the services; the *app-to-app* wiring is done
 the web UIs. **Use `127.0.0.1` (not `localhost`) for every inter-service URL** — the
 services bind IPv4, and `localhost` resolves to IPv6 `::1` first (which fails).
 
-1. **qBittorrent** (`http://nixos:8080`): set a real password; set default save path to `/srv/media/downloads`.
-2. **Prowlarr** (`http://nixos:9696`): add indexer(s); **Settings → Apps** → add Sonarr (`http://127.0.0.1:8989`) and Radarr (`http://127.0.0.1:7878`) so indexers sync.
-3. **Sonarr** (`http://nixos:8989`) / **Radarr** (`http://nixos:7878`): add the qBittorrent download client (`127.0.0.1:8080`); add root folders `/srv/media/tv` and `/srv/media/movies`; enable "Use Hardlinks instead of Copy".
-4. **Jellyfin** (`https://nixos.tail66a220.ts.net`): finish the wizard; add libraries → Shows = `/srv/media/tv`, Movies = `/srv/media/movies`.
-5. **Jellyseerr** (`https://nixos.tail66a220.ts.net:5055`): sign in with Jellyfin (server `http://127.0.0.1:8096`); **Settings → Services** → add Sonarr and Radarr with a sensible default quality profile and the matching root folder.
+1. **qBittorrent** (`http://nixbox:8080`): set a real password; set default save path to `/srv/media/downloads`.
+2. **Prowlarr** (`http://nixbox:9696`): add indexer(s); **Settings → Apps** → add Sonarr (`http://127.0.0.1:8989`) and Radarr (`http://127.0.0.1:7878`) so indexers sync.
+3. **Sonarr** (`http://nixbox:8989`) / **Radarr** (`http://nixbox:7878`): add the qBittorrent download client (`127.0.0.1:8080`); add root folders `/srv/media/tv` and `/srv/media/movies`; enable "Use Hardlinks instead of Copy".
+4. **Jellyfin** (`https://nixbox.tail66a220.ts.net`): finish the wizard; add libraries → Shows = `/srv/media/tv`, Movies = `/srv/media/movies`.
+5. **Jellyseerr** (`https://nixbox.tail66a220.ts.net:5055`): sign in with Jellyfin (server `http://127.0.0.1:8096`); **Settings → Services** → add Sonarr and Radarr with a sensible default quality profile and the matching root folder.
 
 After this, requesting a title in Jellyseerr flows all the way to Jellyfin automatically.
 
 ## Operating it
 
 ```bash
-# Rebuild after changing any system/media/*.nix
+# Rebuild after changing any hosts/nixbox/media/*.nix
 nh os switch                 # or: sudo nixos-rebuild switch --flake ~/.config/nixos#nixos
 
 # Service status / logs
@@ -201,7 +201,7 @@ Hard-won lessons from setting this up:
   **"4K Server"** isn't checked unless you actually run a 4K instance.
 - **qBittorrent "Unauthorized" / blank page when reached by hostname.** Reach it once via
   IP, then Options → Web UI → uncheck "Enable Host header validation" (or add
-  `nixos,nixos.tail66a220.ts.net` to the allowed hosts).
+  `nixbox,nixbox.tail66a220.ts.net` to the allowed hosts).
 - **Empty root-folder dropdown in Jellyseerr.** Jellyseerr lists only what Sonarr/Radarr
   know about — add the root folder (`/srv/media/tv`, `/srv/media/movies`) **in
   Sonarr/Radarr first**.
