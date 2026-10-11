@@ -1,6 +1,6 @@
 # Self-Hosted Media Stack
 
-Personal streaming service running natively on the `nixos` box: request a movie or
+Personal streaming service running natively on the `nixbox`: request a movie or
 show, it gets downloaded automatically, and it shows up in Jellyfin ready to watch.
 
 > **This doc contains no secrets** — no passwords, no API keys. Where credentials are
