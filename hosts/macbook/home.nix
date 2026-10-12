@@ -38,6 +38,9 @@
 
     shellAliases = {
       hms = "nh home switch -c jjmachan@macbook";
+      # Attach to the nixbox's herdr session over mosh (docs/remote-dev.md). A
+      # mosh-server whose client never returns exits after 3 days.
+      nixbox = "mosh --server='MOSH_SERVER_NETWORK_TMOUT=259200 mosh-server' nixbox -- herdr";
       cpwd = "pwd | tr -d '\\n' | pbcopy && echo 'pwd copied to clipboard'";
     };
 

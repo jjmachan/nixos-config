@@ -41,6 +41,7 @@ pkgs: herdr: with pkgs; [
   ldns           # drill command (dig replacement)
   aria2          # multi-protocol download utility
   socat          # multipurpose relay (netcat replacement)
+  mosh           # ssh that survives flaky links (client + server; see docs/remote-dev.md)
   nmap           # network discovery and security auditing
   ipcalc         # IPv4/v6 address calculator
 
