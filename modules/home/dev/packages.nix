@@ -18,6 +18,7 @@ pkgs: herdr: with pkgs; [
 
   # utils
   uv             # fast Python package manager
+  nodejs         # node + npm + npx
   git
   ripgrep        # recursively searches directories for a regex pattern
   fd             # simple, fast alternative to find
