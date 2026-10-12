@@ -3,8 +3,6 @@
 How day-to-day dev work runs: agents and long sessions live on the `nixbox`, and the
 MacBook is mostly a terminal pointed at it. Built to hold up on slow or flaky internet.
 
-> **Status:** designed, not yet built. This line goes away once the mosh changes are merged.
-
 ## The idea
 
 ```
@@ -40,7 +38,8 @@ Three layers, each with one job:
 | Come back | `nixbox` again |
 | Try herdr's own remote mode instead | `herdr --remote nixbox` |
 | See a dev server running on the nixbox | open `http://nixbox:<port>` on the Mac (the server must listen on `0.0.0.0`, not `localhost`) |
-| Copy text from the nixbox to the Mac | select it in herdr or yank in nvim; it travels to the Mac clipboard via OSC 52 |
+| Copy text from the nixbox to the Mac | select it in herdr, or `y` in nvim; it travels to the Mac clipboard via OSC 52 |
+| Paste Mac text into the nixbox | Cmd+V |
 | Work with no internet at all | use the Mac locally: the same herdr, nvim and claude are installed there; move work with git |
 
 The `nixbox` alias expands to:
@@ -69,6 +68,7 @@ That loses nothing, because herdr holds the work, not mosh.
 | mosh on the nixbox, `openFirewall = false` | `hosts/nixbox/configuration.nix` |
 | `nixbox` alias | `hosts/macbook/home.nix` |
 | herdr config (detach key, mouse, clipboard) | `dotfiles/herdr/config.toml` |
+| nvim copies via OSC 52 over ssh/mosh | `dotfiles/nvim/lua/config/options.lua` |
 
 mosh needs UDP ports 60000–61000. They're **not** opened on the LAN: the nixbox
 already accepts all traffic arriving over Tailscale (`tailscale0`), so mosh
@@ -77,9 +77,11 @@ works over Tailscale only. That's deliberate, with one less open port.
 ## Gotchas
 
 - **No scrollback in mosh.** mosh only syncs the visible screen. Scroll inside herdr instead.
-- **Clipboard under mosh still needs testing.** herdr chooses OSC 52 when it sees
-  `SSH_CONNECTION`/`SSH_TTY`. Whether those survive into a mosh session is the one
-  link not yet verified.
+- **Clipboard is copy-only.** Copying from the nixbox works (OSC 52: nvim → herdr →
+  mosh → Ghostty). LazyVim turns the system clipboard off when `SSH_CONNECTION` is
+  set, so `dotfiles/nvim/lua/config/options.lua` turns it back on with an OSC 52
+  provider. Pasting the other way goes through Ghostty (Cmd+V), because mosh can't
+  relay clipboard reads.
 - **SSH to the nixbox is Tailscale SSH**, not OpenSSH. mosh only uses SSH to start up,
   so this doesn't matter, but it explains the odd processes in `ps`.
 - **Two clients on one tab:** the one that last interacted with it sets the pane size.
