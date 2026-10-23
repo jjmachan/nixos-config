@@ -18,6 +18,7 @@ pkgs: herdr: with pkgs; [
 
   # utils
   uv             # fast Python package manager
+  nodejs         # node + npm + npx
   git
   ripgrep        # recursively searches directories for a regex pattern
   fd             # simple, fast alternative to find
@@ -41,6 +42,7 @@ pkgs: herdr: with pkgs; [
   ldns           # drill command (dig replacement)
   aria2          # multi-protocol download utility
   socat          # multipurpose relay (netcat replacement)
+  mosh           # ssh that survives flaky links (client + server; see docs/remote-dev.md)
   nmap           # network discovery and security auditing
   ipcalc         # IPv4/v6 address calculator
 

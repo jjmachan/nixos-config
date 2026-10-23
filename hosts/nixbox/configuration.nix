@@ -63,6 +63,14 @@
   # tailscale
   services.tailscale.enable = true;
 
+  # mosh-server for the Mac's `nixbox` alias (docs/remote-dev.md). Its UDP ports
+  # stay closed on the LAN: tailscale0 traffic is already accepted, so it works
+  # over Tailscale only.
+  programs.mosh = {
+    enable = true;
+    openFirewall = false;
+  };
+
   # Docker
   virtualisation.docker.enable = true;
 
