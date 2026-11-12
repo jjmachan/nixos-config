@@ -1,0 +1,30 @@
+#!/bin/sh
+# Claude Code hook -> herdr-core agent status (OSC 7501), so the Herdr app
+# lists Claude as an agent: working, blocked (needs you), done.
+#
+#   herdr-agent-status working|blocked|done|idle|clear [permission|question]
+#
+# herdr-core never guesses status from the screen; the program must report it.
+# Hooks run without a terminal of their own, so the report goes to the tty of
+# the nearest ancestor that has one: Claude itself. Does nothing outside a
+# herdr-core terminal (no HC_TERMINAL_ID), e.g. in Ghostty or the herdr TUI.
+
+[ -n "${HC_TERMINAL_ID:-}" ] || exit 0
+state="${1:-}"
+kind="${2:-}"
+[ -n "$state" ] || exit 0
+
+p=$PPID
+tty=""
+while [ "${p:-1}" -gt 1 ]; do
+  tty=$(ps -o tty= -p "$p" 2>/dev/null | tr -d ' ')
+  case "$tty" in
+    "" | "?" | "??") p=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ') ;;
+    *) break ;;
+  esac
+done
+case "$tty" in "" | "?" | "??") exit 0 ;; esac
+
+fields="state=$state"
+[ -n "$kind" ] && fields="$fields:kind=$kind"
+printf '\033]7501;%s:app=claude\033\\' "$fields" >"/dev/$tty" 2>/dev/null || true
