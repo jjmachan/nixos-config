@@ -22,7 +22,7 @@ nix flake lock --update-input <input-name>
 
 One flake for jjmachan's machines: the nixbox (NixOS, x86_64-linux, hostname "nixbox"), the MacBook (standalone home-manager, aarch64-darwin), any other Linux box (`homeConfigurations."jjmachan@linux"`), and a tools-only `packages.<system>.dev-tools` bundle. All share `modules/home/dev`. See README for outputs and the roadmap.
 
-**Flake inputs:** nixpkgs 26.05 (stable), claude-code-nix (sadjow/claude-code-nix — hourly auto-updated claude-code), home-manager 26.05, worktrunk, herdr (herdrdev/herdr — built from source, follows our nixpkgs), suika (local custom module at /home/jjmachan/suika-module — a self-evolving AI agent in a MicroVM).
+**Flake inputs:** nixpkgs 26.05 (stable), claude-code-nix (sadjow/claude-code-nix — publishes claude-code releases hourly; we pick them up only when we update the input), home-manager 26.05, worktrunk, herdr (herdrdev/herdr — built from source, follows our nixpkgs), suika (local custom module at /home/jjmachan/suika-module — a self-evolving AI agent in a MicroVM).
 
 ### Key Files
 
@@ -34,6 +34,8 @@ One flake for jjmachan's machines: the nixbox (NixOS, x86_64-linux, hostname "ni
 - `hosts/macbook/home.nix` — the Mac: dev + desktop modules, flakes in ~/.config/nix/nix.conf, Mac-only zsh (nix-daemon.sh in .zshenv — nothing else puts nix on PATH there; brew shellenv; nix re-prepended last so it wins over brew)
 - `hosts/linux/home.nix` — any other Linux box: dev module only, `repoPath` null
 - `modules/home/dev/packages.nix` — the dev package list as a function `pkgs: herdr: [...]`, shared by the module and `dev-tools`
+- `pkgs/` — our own packages, added to pkgs by `local-overlay` in flake.nix (herdr-core: official release builds, version and hashes pinned by hand). Build one alone: `nix build .#herdr-core`
+- Updates are manual (no timers): see docs/updating.md
 - `modules/home/desktop/` — GUI-side home config (ghostty: package on Linux, config everywhere)
 - `hosts/nixbox/{media,agents}/` — media stack and agent MicroVMs
 
@@ -57,4 +59,4 @@ One flake for jjmachan's machines: the nixbox (NixOS, x86_64-linux, hostname "ni
 - Flake inputs reach home-manager modules via `home-manager.extraSpecialArgs = { inherit inputs; }` (used for herdr)
 - New dotfiles must be `git add`ed before building — flakes only see git-tracked files
 - State versions: system is 25.05, home-manager is 25.11 — never bump them on a release upgrade; they record what created on-disk state (e.g. seerr keeps /var/lib/jellyseerr because system < 26.05)
-- Repo symlink: `~/.config/nixos` → actual repo location. `programs.nh.flake` and the `claude-code-update` systemd service both reference this symlink. To move the repo, update the symlink (`ln -sfn /new/path ~/.config/nixos`) — no rebuild needed.
+- Repo symlink: `~/.config/nixos` → actual repo location. `programs.nh.flake` and `dev.repoPath` reference this symlink. To move the repo, update the symlink (`ln -sfn /new/path ~/.config/nixos`) — no rebuild needed.

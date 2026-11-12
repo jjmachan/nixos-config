@@ -52,6 +52,15 @@ in {
       fi
     '');
 
+    # A core started before this switch keeps running its old binary. Asking
+    # the new hc for its own version restarts an older running core the
+    # planned way (terminals keep running; the next hc call starts the new
+    # binary) and does nothing when none is running or it's already current.
+    home.activation.herdrCoreRestart = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      run ${pkgs.herdr-core}/bin/hc update --version ${pkgs.herdr-core.version} >/dev/null \
+        || warnEcho "herdr-core: could not restart the running core; run: hc server restart"
+    '';
+
     # Helper scripts: herdr-jump (prefix+j popup), wt-clone / wt-init (worktrunk
     # bare-repo layout)
     home.file.".local/bin" = {

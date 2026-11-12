@@ -30,14 +30,20 @@
 
   outputs = inputs@{ self, nixpkgs, claude-code, home-manager, worktrunk, herdr, microvm, hermes-agent }:
   let
-    # Overlay to use claude-code from sadjow/claude-code-nix (hourly updates)
+    # Overlay to use claude-code from sadjow/claude-code-nix (new releases land
+    # when we update the claude-code input; see docs/updating.md)
     claude-code-overlay = claude-code.overlays.default;
+
+    # Our own packages (pkgs/), added to pkgs like any nixpkgs package.
+    local-overlay = final: prev: {
+      herdr-core = final.callPackage ./pkgs/herdr-core { };
+    };
 
     # Standalone home-manager (the Mac, other Linux boxes) has no NixOS to hand
     # it pkgs, so build one per system with the same overlay and unfree setting.
     pkgsFor = system: import nixpkgs {
       inherit system;
-      overlays = [ claude-code-overlay ];
+      overlays = [ claude-code-overlay local-overlay ];
       config.allowUnfree = true;
     };
 
@@ -67,7 +73,7 @@
       modules = [
         ./hosts/nixbox/configuration.nix
         {
-          nixpkgs.overlays = [ claude-code-overlay ];
+          nixpkgs.overlays = [ claude-code-overlay local-overlay ];
         }
         home-manager.nixosModules.home-manager {
             home-manager.useGlobalPkgs = true;
@@ -93,6 +99,8 @@
 
     packages = nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-linux" ] (system: {
       dev-tools = devTools system;
+      # Build one package on its own: nix build .#herdr-core
+      herdr-core = (pkgsFor system).herdr-core;
     });
   };
 }

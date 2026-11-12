@@ -9,6 +9,7 @@ pkgs: herdr: with pkgs; [
   tmux           # terminal multiplexer
   claude-code    # AI coding assistant
   herdr          # terminal workspace manager for AI coding agents
+  herdr-core     # hc: runtime under the Herdr app and phone app (pkgs/herdr-core)
 
   # archives
   zip
