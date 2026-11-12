@@ -135,6 +135,8 @@ export default class Tty extends View {
         for (;;) {
           const c = await nextCommand();
           if (c === "goto" || c === "inbox") this.toggleGoto(c);
+          else if (c === "tab-left") this.moveTab(-1);
+          else if (c === "tab-right") this.moveTab(1);
           cx.notify();
         }
       });
@@ -471,6 +473,17 @@ export default class Tty extends View {
       .child(h_flex().flex_none().px(12).child(counts(t, agents(), 12)))
       .when(at > 0, (el) => el.child(h_flex().h_full().flex_none().px(10).items_center().bg(t.hover).text_color(t.muted).child(`pane ${at}/${inTab.length}`)))
       .child(h_flex().h_full().flex_none().px(12).items_center().bg(t.accent).font_bold().text_color(t.accent_foreground).child(clock(true)));
+  }
+
+  // Move the shown tab one place left or right, wrapping at the ends.
+  // tab.move wants an id and a position, so a key can't say "left" alone.
+  moveTab(by) {
+    const s = spaces().find((s) => s.active);
+    if (!s || s.tabs.length < 2) return;
+    const i = s.tabs.findIndex((c) => c.active);
+    if (i < 0) return;
+    const to = (i + by + s.tabs.length) % s.tabs.length;
+    run("tab.move", { id: s.tabs[i].id, index: to + 1 });
   }
 
   // ---- go to / inbox ---------------------------------------------------
