@@ -1,0 +1,26 @@
+{
+  "id": "root", "type": "column", "titlebar": "none", "traffic_lights": [14, 10],
+  "theme": "tty-night", "font": "JetBrains Mono", "font_size": 13, "ui_font": "JetBrains Mono",
+  "terminal_padding": [6, 10], "background": "canvas",
+  "divider": { "width": 1, "color": "border" },
+  "children": [
+    { "id": "topline", "type": "block", "size": { "px": 32 }, "window_drag": true,
+      "content": { "mod": "tty", "props": { "role": "topline" } } },
+    { "id": "body", "type": "row", "divider": { "width": 1, "color": "border" }, "children": [
+      { "id": "sidebar", "type": "column", "size": { "px": 288 }, "min": 200, "max": 480,
+        "background": "canvas", "children": [
+          { "id": "spaces", "type": "block", "size": { "weight": 3 },
+            "content": { "mod": "tty", "props": { "role": "spaces" } } },
+          { "id": "agents", "type": "block", "size": { "weight": 2 }, "min": 80,
+            "content": { "mod": "tty", "props": { "role": "agents" } } },
+          { "id": "keys", "type": "block", "size": { "px": 26 },
+            "content": { "mod": "tty", "props": { "role": "keys" } } } ] },
+      { "id": "main", "type": "block", "background": "canvas", "padding": 10,
+        "content": { "tab": "active", "pane": {
+          "gap": 10, "radius": 0, "background": "background", "lone": true,
+          "border": { "width": 1, "color": "border" }, "focus": { "width": 1, "color": "accent" },
+          "header": { "content": { "mod": "tty" }, "height": 24, "position": "top", "reveal": "always" } } } } ] },
+    { "id": "status", "type": "block", "size": { "px": 26 },
+      "content": { "mod": "tty", "props": { "role": "statusline" } } }
+  ]
+}

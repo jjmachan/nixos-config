@@ -1,0 +1,17 @@
+{
+  "id": "root", "type": "column", "titlebar": "none", "traffic_lights": [14, 9],
+  "theme": "tty-night", "font": "JetBrains Mono", "font_size": 13, "ui_font": "JetBrains Mono",
+  "terminal_padding": [6, 14], "background": "canvas",
+  "divider": { "width": 1, "color": "border" },
+  "children": [
+    { "id": "topline", "type": "block", "size": { "px": 30 }, "window_drag": true,
+      "content": { "mod": "tty", "props": { "role": "topline", "variant": "zen" } } },
+    { "id": "main", "type": "block", "background": "border",
+      "content": { "tab": "active", "pane": {
+        "gap": 1, "radius": 0, "background": "background", "lone": true,
+        "border": { "width": 0 },
+        "header": { "content": { "mod": "tty", "props": { "variant": "rule" } }, "height": 28, "position": "top", "reveal": "always" } } } },
+    { "id": "status", "type": "block", "size": { "px": 26 },
+      "content": { "mod": "tty", "props": { "role": "statusline", "variant": "zen" } } }
+  ]
+}
