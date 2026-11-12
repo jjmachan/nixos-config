@@ -24,30 +24,8 @@ in
       extraPackages = pkgs: [ pkgs.ffmpeg ];
     })
 
-    # Alfred — work assistant (sales research/outreach), work Slack only.
-    # Agent #2.
-    (mkAgent {
-      name = "alfred";
-      subnetOctet = 102;
-      mac = "02:00:00:00:00:03";
-      # Default home channel: jjmachan's Slack DM with Alfred.
-      homeChannelVar = "SLACK_HOME_CHANNEL";
-      homeChannelDefault = "D0BF8CP0TJS";
-    })
-
-    # Iris — Telegram guide for friends exploring what AI agents can do.
-    # Agent #3. Her persona is checked in (iris/soul.md) and seeded ONCE on
-    # first boot; from then on she evolves it herself.
-    # Home channel = jjmachan's DM: cron results go to each job's ORIGIN chat
-    # (per-user already); home is only the fallback sink + restart notices.
-    # Seeding it also stops friends from /sethome-ing the global value.
-    (mkAgent {
-      name = "iris";
-      subnetOctet = 103;
-      mac = "02:00:00:00:00:04";
-      homeChannelVar = "TELEGRAM_HOME_CHANNEL";
-      homeChannelDefault = "322721507";
-      soulFile = ./iris/soul.md;
-    })
+    # Retired 2026-11-12, state deleted: Alfred (agent #2, octet 102, MAC
+    # ...:03) and Iris (agent #3, octet 103, MAC ...:04). Don't reuse their
+    # names; a new agent takes the next free octet and MAC (104, ...:05).
   ];
 }

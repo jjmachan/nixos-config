@@ -18,7 +18,7 @@
       url = "github:herdrdev/herdr";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # MicroVM host for the agents (Penny, Alfred, Iris).
+    # MicroVM host for the agents (Penny).
     microvm = {
       url = "github:astro/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
