@@ -135,10 +135,13 @@ in {
       enableZshIntegration = true;
     };
 
-    # Direnv — auto-load environment variables per directory, with nix-direnv for flake support
+    # Direnv — auto-load environment variables per directory, with nix-direnv for flake support.
+    # .env files load everywhere; each one still needs `direnv allow` once.
     programs.direnv = {
       enable = true;
       nix-direnv.enable = true;
+      config.global.load_dotenv = true; # folders with only a .env
+      stdlib = "dotenv_if_exists"; # direnvrc: folders with an .envrc load their .env too
     };
 
     # nh — nicer nix CLI (`nh os switch`, `nh home switch`) with a diff before
