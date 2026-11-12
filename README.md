@@ -4,8 +4,8 @@ One flake for jjmachan's machines, built around a shared terminal dev module:
 
 | Output | Machine | How it's applied |
 |--------|---------|------------------|
-| `nixosConfigurations.nixbox` | the nixbox (x86_64-linux, NixOS) | `nh os switch .` |
-| `homeConfigurations."jjmachan@macbook"` | the MacBook (aarch64-darwin) | standalone home-manager: `hms` (`nh home switch -c jjmachan@macbook`) |
+| `nixosConfigurations.nixbox` | the nixbox (x86_64-linux, NixOS) | `just switch` (`nh os switch .`) |
+| `homeConfigurations."jjmachan@macbook"` | the MacBook (aarch64-darwin) | standalone home-manager: `just switch` (`nh home switch -c jjmachan@macbook .`) |
 | `homeConfigurations."jjmachan@linux"` | any other Linux box with nix | see [Any box](#any-box) |
 | `packages.<system>.dev-tools` | a borrowed box | see [Any box](#any-box) (tools only, nothing persists) |
 

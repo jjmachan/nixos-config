@@ -24,6 +24,4 @@
     pciutils       # lspci
     usbutils       # lsusb
   ];
-
-  programs.zsh.shellAliases.nrs = "nh os switch";
 }
