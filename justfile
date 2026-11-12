@@ -40,8 +40,8 @@ switch mode="":
     "${cmd[@]}" "${flags[@]}"
 
 # Only flake.lock changes; `just switch` installs it.
-[doc("Update one input (`just update claude-code`), `all`, or list inputs and dates")]
-update target="":
+[doc("Update inputs (`just update nixpkgs home-manager`), `all`, or list inputs and dates")]
+update *targets:
     #!/usr/bin/env bash
     set -euo pipefail
     # name  date  rev, for every input of this flake (one level deep).
@@ -50,7 +50,7 @@ update target="":
             | ($n[.value].locked // {}) as $l
             | "\(.key)\t\($l.lastModified // 0 | todate | .[0:10])\t\(($l.rev // "-")[0:7])"' flake.lock
     }
-    case "{{target}}" in
+    case "{{targets}}" in
         "")
             echo "Inputs and when each was last updated (flake.lock):"
             inputs | column -t -s $'\t'
@@ -71,12 +71,14 @@ update target="":
             exit 0 ;;
     esac
     before=$(inputs)
-    if [[ "{{target}}" == all ]]; then
+    if [[ "{{targets}}" == all ]]; then
         cmd=(nix flake update)
     else
-        printf '%s\n' "$before" | cut -f1 | grep -qx "{{target}}" \
-            || { echo "update: no input '{{target}}'. Inputs: $(printf '%s\n' "$before" | cut -f1 | tr '\n' ' ')" >&2; exit 2; }
-        cmd=(nix flake update "{{target}}")
+        for t in {{targets}}; do
+            printf '%s\n' "$before" | cut -f1 | grep -qx "$t" \
+                || { echo "update: no input '$t'. Inputs: $(printf '%s\n' "$before" | cut -f1 | tr '\n' ' ')" >&2; exit 2; }
+        done
+        cmd=(nix flake update {{targets}})
     fi
     echo "→ ${cmd[*]}"
     "${cmd[@]}" 2>/dev/null
