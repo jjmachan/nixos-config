@@ -17,7 +17,12 @@ in {
   home.packages = lib.optionals pkgs.stdenv.isLinux [ pkgs.ghostty ];
   xdg.configFile = {
     "ghostty/config".source = ../../../dotfiles/ghostty/config;
-  } // lib.optionalAttrs (pkgs.stdenv.isDarwin && config.dev.repoPath != null) (builtins.listToAttrs (map linkHerdrApp [
+  } // lib.optionalAttrs (pkgs.stdenv.isDarwin && config.dev.repoPath != null) ({
+    # Rex (superlogical.com/rex) installs and updates itself; only init.lua is
+    # ours. It links to the checkout, so an edit is live after Reload Config in
+    # Rex, no switch needed, and shows up in `git diff`.
+    "rex/init.lua".source = config.lib.file.mkOutOfStoreSymlink "${config.dev.repoPath}/dotfiles/rex/init.lua";
+  } // builtins.listToAttrs (map linkHerdrApp [
     # Only these: the rest of ~/.config/herdr-app is the app's own state.
     # Edits behind a link don't hot-reload; switch layouts (ctrl-shift-l) to
     # pick them up.
