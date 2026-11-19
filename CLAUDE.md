@@ -34,7 +34,7 @@ One flake for jjmachan's machines: the nixbox (NixOS, x86_64-linux, hostname "ni
 - `modules/home/dev/packages.nix` — the dev package list as a function `pkgs: herdr: [...]`, shared by the module and `dev-tools`
 - `pkgs/` — our own packages, added to pkgs by `local-overlay` in flake.nix (herdr-core: official release builds, version and hashes pinned by hand). Build one alone: `nix build .#herdr-core`
 - Updates are manual (no timers): see docs/updating.md
-- `modules/home/desktop/` — GUI-side home config (ghostty: package on Linux, config everywhere)
+- `modules/home/desktop/` — GUI-side home config (ghostty: package on Linux, config everywhere; Mac-only links into the checkout for the Herdr app and Rex)
 - `hosts/nixbox/{media,agents}/` — media stack and agent MicroVMs
 
 ### Dotfiles (`dotfiles/`)
@@ -44,6 +44,7 @@ One flake for jjmachan's machines: the nixbox (NixOS, x86_64-linux, hostname "ni
 - `herdr-plugins/worktrunk/` — herdr plugin, registered by a `home.activation` step via `herdr plugin link` against the repo path (not the store)
 - `bin/` — `herdr-jump`, `wt-clone`, `wt-init`, linked into `~/.local/bin` (on `home.sessionPath`)
 - `ghostty/config` — terminal config (tokyonight)
+- `rex/init.lua` — Rex (Mac terminal multiplexer app) key bindings: alt keys for panes and tabs, Rex defaults for the rest. Linked to the checkout on the Mac, so edits go live with Reload Config in Rex; check with `REX_CONFIG=dotfiles/rex/init.lua rex config check`
 - `zellij/config.kdl` — Terminal multiplexer config, kept as a fallback to herdr (default mode: locked)
 - `zsh/.p10k.zsh` — Powerlevel10k prompt theme config
 - `zsh/key-bindings.zsh` — FZF key bindings for zsh
