@@ -57,7 +57,7 @@ That loses nothing, because herdr holds the work, not mosh.
   sleeps, and closing the laptop doesn't kill anything.
 - **Short offline work:** on the Mac. Claude sessions are tied to the machine and the
   absolute path (`/Users/…` vs `/home/…`), so a session started on the Mac stays on the Mac.
-- **The hermes agents (Penny, Alfred, Iris):** separate MicroVMs on the nixbox,
+- **The hermes agent (Penny):** a separate MicroVM on the nixbox,
   unaffected by any of this. See `hosts/nixbox/agents/`.
 
 ## How it's configured

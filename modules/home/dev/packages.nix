@@ -9,6 +9,7 @@ pkgs: herdr: with pkgs; [
   tmux           # terminal multiplexer
   claude-code    # AI coding assistant
   herdr          # terminal workspace manager for AI coding agents
+  herdr-core     # hc: runtime under the Herdr app and phone app (pkgs/herdr-core)
 
   # archives
   zip
@@ -24,6 +25,7 @@ pkgs: herdr: with pkgs; [
   fd             # simple, fast alternative to find
   zoxide         # smarter cd command
   jq             # command-line JSON processor
+  just           # runs the repo's justfile: just switch, just update
   yq-go          # yaml processor
   eza            # modern replacement for ls
   tree           # display directories as trees

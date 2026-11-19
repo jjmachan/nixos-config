@@ -4,8 +4,8 @@ One flake for jjmachan's machines, built around a shared terminal dev module:
 
 | Output | Machine | How it's applied |
 |--------|---------|------------------|
-| `nixosConfigurations.nixbox` | the nixbox (x86_64-linux, NixOS) | `nh os switch .` |
-| `homeConfigurations."jjmachan@macbook"` | the MacBook (aarch64-darwin) | standalone home-manager: `hms` (`nh home switch -c jjmachan@macbook`) |
+| `nixosConfigurations.nixbox` | the nixbox (x86_64-linux, NixOS) | `just switch` (`nh os switch .`) |
+| `homeConfigurations."jjmachan@macbook"` | the MacBook (aarch64-darwin) | standalone home-manager: `just switch` (`nh home switch -c jjmachan@macbook .`) |
 | `homeConfigurations."jjmachan@linux"` | any other Linux box with nix | see [Any box](#any-box) |
 | `packages.<system>.dev-tools` | a borrowed box | see [Any box](#any-box) (tools only, nothing persists) |
 
@@ -70,7 +70,7 @@ nh os switch .
 
 ## Important: Repo Location
 
-Each host tells the dev module where its checkout is with `dev.repoPath` (null = no checkout; repo-dependent steps skip). On the nixbox that's the symlink at `~/.config/nixos`, which nh and the claude-code-update service also use. Clone the repo anywhere, then point the symlink at it:
+Each host tells the dev module where its checkout is with `dev.repoPath` (null = no checkout; repo-dependent steps skip). On the nixbox that's the symlink at `~/.config/nixos`, which nh also uses. Clone the repo anywhere, then point the symlink at it:
 
 ```bash
 ln -sfn /path/to/your/clone ~/.config/nixos
@@ -82,7 +82,7 @@ To move the repo later, just update the symlink — no rebuild needed.
 
 - **nixpkgs** — NixOS 26.05 (stable)
 - **home-manager** — 26.05, a NixOS module on the nixbox, standalone elsewhere
-- **claude-code-nix** — Hourly auto-updated Claude Code package
+- **claude-code-nix** — Claude Code package, published hourly upstream; updated here by hand with `nix flake update claude-code`
 - **suika** — Local MicroVM module
 - **worktrunk** — Git worktree management for parallel AI agents
 - **herdr** — terminal workspace manager, built from source (follows our nixpkgs)
