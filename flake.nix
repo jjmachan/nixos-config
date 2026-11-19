@@ -26,9 +26,16 @@
     # Hermes-agent provides its own NixOS module + uv2nix package.
     # Keep its own nixpkgs (uv2nix targets nixpkgs-unstable) — do NOT follow ours.
     hermes-agent.url = "github:NousResearch/hermes-agent";
+    # Rex — the nixbox's personal Rex server (docs/rex.md). The preview channel,
+    # like the Mac app; flake.lock pins the exact release. A prebuilt binary that
+    # nixpkgs only patches against its glibc, so ours does.
+    rex = {
+      url = "https://pkgs.superlogical.com/rex/nix/preview.tar.gz";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, claude-code, home-manager, worktrunk, herdr, microvm, hermes-agent }:
+  outputs = inputs@{ self, nixpkgs, claude-code, home-manager, worktrunk, herdr, microvm, hermes-agent, rex }:
   let
     # Overlay to use claude-code from sadjow/claude-code-nix (new releases land
     # when we update the claude-code input; see docs/updating.md)

@@ -20,14 +20,14 @@ just update all
 
 One flake for jjmachan's machines: the nixbox (NixOS, x86_64-linux, hostname "nixbox"), the MacBook (standalone home-manager, aarch64-darwin), any other Linux box (`homeConfigurations."jjmachan@linux"`), and a tools-only `packages.<system>.dev-tools` bundle. All share `modules/home/dev`. See README for outputs and the roadmap.
 
-**Flake inputs:** nixpkgs 26.05 (stable), claude-code-nix (sadjow/claude-code-nix — publishes claude-code releases hourly; we pick them up only when we update the input), home-manager 26.05, worktrunk, herdr (herdrdev/herdr — built from source, follows our nixpkgs), suika (local custom module at /home/jjmachan/suika-module — a self-evolving AI agent in a MicroVM).
+**Flake inputs:** nixpkgs 26.05 (stable), rex (Rex preview channel; prebuilt, follows our nixpkgs; its home-manager module runs the nixbox's personal Rex server), claude-code-nix (sadjow/claude-code-nix — publishes claude-code releases hourly; we pick them up only when we update the input), home-manager 26.05, worktrunk, herdr (herdrdev/herdr — built from source, follows our nixpkgs), suika (local custom module at /home/jjmachan/suika-module — a self-evolving AI agent in a MicroVM).
 
 ### Key Files
 
 - `flake.nix` — Defines inputs, overlay (claude-code from claude-code-nix), and wires together system + home-manager modules
 - `hosts/nixbox/configuration.nix` — NixOS system config: GNOME desktop, systemd-boot, PipeWire audio, Docker, Tailscale, OpenSSH, Suika service, passwordless sudo, lid-close-no-sleep (server use)
 - `hosts/nixbox/hardware-configuration.nix` — Auto-generated hardware config (Intel/KVM, EFI, NVMe)
-- `hosts/nixbox/home.nix` — jjmachan's home on the nixbox: imports the dev + desktop modules, sets `dev.repoPath`, holds `home.stateVersion`, plus nixbox-only bits (Linux server diagnostics)
+- `hosts/nixbox/home.nix` — jjmachan's home on the nixbox: imports the dev + desktop modules, sets `dev.repoPath`, holds `home.stateVersion`, plus nixbox-only bits (Linux server diagnostics, the personal Rex server the Mac reaches over ssh — docs/rex.md)
 - `modules/home/dev/` — shared terminal dev module (packages, neovim, zsh, zellij, git, gh, herdr, dotfile sourcing). Importing it turns it on; options live under `dev.*`. Linux-only bits go behind `lib.optionals pkgs.stdenv.isLinux`; machine-specific bits go in the host
 - `hosts/macbook/home.nix` — the Mac: dev + desktop modules, flakes in ~/.config/nix/nix.conf, Mac-only zsh (nix-daemon.sh in .zshenv — nothing else puts nix on PATH there; brew shellenv; nix re-prepended last so it wins over brew)
 - `hosts/linux/home.nix` — any other Linux box: dev module only, `repoPath` null

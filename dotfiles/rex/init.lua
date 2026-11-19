@@ -22,3 +22,8 @@ rex.bind("alt+8", "client.tab.goto", { index = 8 })
 rex.bind("alt+9", "client.tab.goto", { index = 9 })
 rex.bind("alt+i", "client.tab.move", { direction = "backward" })
 rex.bind("alt+o", "client.tab.move", { direction = "forward" })
+
+-- Hosts: other Rex servers this Mac connects to, by label (rex -S nixbox ls).
+-- Over ssh, the docs' recommended way in: Rex runs the Mac's own ssh with its
+-- keys and config, and starts the nixbox's personal server if it isn't running.
+rex.host{ label = "nixbox", endpoint = "ssh://jjmachan@nixbox" }

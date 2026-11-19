@@ -66,7 +66,7 @@ nh os switch .
 | `modules/home/dev/` | Shared terminal dev setup (packages, shell, editor, git, herdr) for every machine; `packages.nix` is also the `dev-tools` bundle |
 | `modules/home/desktop/` | GUI-side home config (ghostty, Herdr app, Rex) for machines with a screen |
 | `dotfiles/` | App configs (neovim, zellij, zsh) |
-| `docs/` | Project documentation — see [media-stack.md](docs/media-stack.md) |
+| `docs/` | Project documentation — see [media-stack.md](docs/media-stack.md), [rex.md](docs/rex.md) |
 
 ## Important: Repo Location
 
