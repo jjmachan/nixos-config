@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# Alfred: the work Slack bot that Claude Code (and you) post through, so
+# messages from agents come from Alfred, not from your own account.
+#
+#   alfred login                     store Alfred's bot token and your member ID
+#   alfred whoami                    check the token: workspace and bot name
+#   alfred dm [--thread TS] [TEXT]   message you, in your DM with Alfred
+#   alfred post CHANNEL [--thread TS] [TEXT]
+#                                    message a channel (ID, or #name if public)
+#
+# TEXT is Markdown; without it, the message is read from stdin. On success it
+# prints the channel, the message ts (pass it to --thread for replies) and a
+# permalink.
+#
+# The bot token lives in the macOS Keychain (service "alfred-slack") or, on
+# Linux, in ~/.config/alfred/token (0600). ALFRED_SLACK_TOKEN overrides both.
+# Your member ID, the target of `alfred dm`, is in ~/.config/alfred/dm-user.
+set -euo pipefail
+
+dir="${XDG_CONFIG_HOME:-$HOME/.config}/alfred"
+keychain_service="alfred-slack"
+
+die() { echo "alfred: $*" >&2; exit 1; }
+
+usage() { sed -n '5,9s/^# \{0,1\}//p' "$0"; exit "${1:-0}"; }
+
+token() {
+  if [ -n "${ALFRED_SLACK_TOKEN:-}" ]; then
+    printf '%s' "$ALFRED_SLACK_TOKEN"
+  elif [ "$(uname)" = Darwin ]; then
+    security find-generic-password -s "$keychain_service" -a "$USER" -w 2>/dev/null \
+      || die "no token in the Keychain; run: alfred login"
+  else
+    cat "$dir/token" 2>/dev/null || die "no token in $dir/token; run: alfred login"
+  fi
+}
+
+# api METHOD JSON -> response JSON; dies with Slack's error on failure.
+api() {
+  local tok res
+  tok=$(token) || exit 1
+  res=$(curl -sS -X POST "https://slack.com/api/$1" \
+    -H "Authorization: Bearer $tok" \
+    -H 'Content-Type: application/json; charset=utf-8' \
+    --data "$2") || die "$1: request failed"
+  if [ "$(jq -r .ok <<<"$res")" != true ]; then
+    local err
+    err=$(jq -r '.error // "unknown error"' <<<"$res")
+    case "$err" in
+      not_in_channel) die "$1: Alfred isn't in that channel; invite @Alfred there first" ;;
+      channel_not_found) die "$1: channel not found; use the channel ID (C…) for private channels" ;;
+      missing_scope) die "$1: the Alfred app needs scope $(jq -r .needed <<<"$res"); add it and reinstall" ;;
+      *) die "$1: $err" ;;
+    esac
+  fi
+  printf '%s' "$res"
+}
+
+login() {
+  local tok user
+  printf 'Alfred bot token (xoxb-…, input hidden): ' >&2
+  read -rs tok; echo >&2
+  case "$tok" in xoxb-*) ;; *) die "expected a bot token starting with xoxb-" ;; esac
+  ALFRED_SLACK_TOKEN=$tok api auth.test '{}' >/dev/null
+
+  if [ "$(uname)" = Darwin ]; then
+    # Through security's stdin, so the token never shows up in ps.
+    printf 'add-generic-password -U -s %s -a %s -w %s\n' "$keychain_service" "$USER" "$tok" \
+      | security -i >/dev/null
+  else
+    mkdir -p "$dir"
+    (umask 077; printf '%s\n' "$tok" >"$dir/token")
+  fi
+
+  user=$(cat "$dir/dm-user" 2>/dev/null || true)
+  printf 'Your Slack member ID, for alfred dm [%s]: ' "${user:-none}" >&2
+  read -r reply
+  user=${reply:-$user}
+  if [ -n "$user" ]; then
+    mkdir -p "$dir"
+    printf '%s\n' "$user" >"$dir/dm-user"
+  fi
+  whoami
+}
+
+whoami() {
+  api auth.test '{}' | jq -r '"\(.user) in \(.team) (\(.url))"'
+}
+
+# send CHANNEL THREAD TEXT
+send() {
+  local body res channel ts
+  [ -n "$3" ] || die "empty message"
+  # A markdown block renders ordinary Markdown; text is the notification fallback.
+  body=$(jq -n --arg c "$1" --arg t "$2" --arg m "$3" '
+    {channel: $c, text: $m, blocks: [{type: "markdown", text: $m}], unfurl_links: false}
+    + (if $t == "" then {} else {thread_ts: $t} end)')
+  res=$(api chat.postMessage "$body")
+  channel=$(jq -r .channel <<<"$res")
+  ts=$(jq -r .ts <<<"$res")
+  echo "channel=$channel ts=$ts"
+  api chat.getPermalink "$(jq -n --arg c "$channel" --arg t "$ts" '{channel: $c, message_ts: $t}')" \
+    | jq -r .permalink 2>/dev/null || true
+}
+
+cmd=${1:-}
+[ $# -gt 0 ] && shift
+thread=""
+case "$cmd" in
+  login) login ;;
+  whoami) whoami ;;
+  dm | post)
+    if [ "$cmd" = dm ]; then
+      channel=${ALFRED_DM_USER:-$(cat "$dir/dm-user" 2>/dev/null || true)}
+      [ -n "$channel" ] || die "no member ID for dm; run: alfred login"
+    else
+      [ $# -gt 0 ] || die "usage: alfred post CHANNEL [--thread TS] [TEXT]"
+      channel=$1; shift
+    fi
+    if [ "${1:-}" = --thread ]; then
+      [ $# -ge 2 ] || die "--thread needs a message ts"
+      thread=$2; shift 2
+    fi
+    if [ $# -gt 0 ]; then text="$*"; else text=$(cat); fi
+    send "$channel" "$thread" "$text"
+    ;;
+  -h | --help | help) usage ;;
+  *) usage 1 >&2 ;;
+esac
