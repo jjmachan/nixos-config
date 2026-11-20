@@ -27,12 +27,22 @@ Claude Code session
 ## The token
 
 Copy the **Bot User OAuth Token** from the Alfred app's *OAuth & Permissions*
-page (reinstall the app if it has none), then on each machine:
+page (reinstall the app if it has none). `alfred login` checks it with Slack
+and stores it; it reads the token from stdin, so nothing has to be pasted into
+a hidden prompt:
 
 ```sh
-alfred login     # asks for the token (hidden) and your member ID; checks the token
+# On the Mac, with the token on the clipboard:
+pbpaste | alfred login U06LQUAFX1R
+
+# The nixbox, from the Mac's Keychain:
+security find-generic-password -s alfred-slack -w | ssh nixbox '~/.local/bin/alfred login U06LQUAFX1R'
+
 alfred whoami    # Alfred in <workspace>
 ```
+
+Run with no input, it prompts instead (the token is hidden as you type or
+paste). The argument is your member ID, the target of `alfred dm`.
 
 The Mac keeps it in the Keychain (service `alfred-slack`); the nixbox in
 `~/.config/alfred/token`, mode 0600. Your member ID, the target of

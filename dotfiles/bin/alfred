@@ -2,7 +2,7 @@
 # Alfred: the work Slack bot that Claude Code (and you) post through, so
 # messages from agents come from Alfred, not from your own account.
 #
-#   alfred login                     store Alfred's bot token and your member ID
+#   alfred login [MEMBER_ID]         store Alfred's bot token and your member ID
 #   alfred whoami                    check the token: workspace and bot name
 #   alfred dm [--thread TS] [TEXT]   message you, in your DM with Alfred
 #   alfred post CHANNEL [--thread TS] [TEXT]
@@ -15,6 +15,9 @@
 # The bot token lives in the macOS Keychain (service "alfred-slack") or, on
 # Linux, in ~/.config/alfred/token (0600). ALFRED_SLACK_TOKEN overrides both.
 # Your member ID, the target of `alfred dm`, is in ~/.config/alfred/dm-user.
+# login reads the token from stdin when it isn't a terminal, so it never has
+# to be pasted: `pbpaste | alfred login U…`, or from the Mac to another box:
+#   security find-generic-password -s alfred-slack -w | ssh HOST '~/.local/bin/alfred login U…'
 set -euo pipefail
 
 dir="${XDG_CONFIG_HOME:-$HOME/.config}/alfred"
@@ -57,10 +60,20 @@ api() {
 }
 
 login() {
-  local tok user
-  printf 'Alfred bot token (xoxb-…, input hidden): ' >&2
-  read -rs tok; echo >&2
-  case "$tok" in xoxb-*) ;; *) die "expected a bot token starting with xoxb-" ;; esac
+  local tok="" user="${1:-}" reply=""
+  if [ -t 0 ]; then
+    printf 'Alfred bot token (xoxb-…, hidden: paste, then Enter): ' >&2
+    read -rs tok || true; echo >&2
+  else
+    read -r tok || true
+  fi
+  # Drop bracketed-paste markers and stray whitespace around a pasted token.
+  tok=${tok//$'\e[200~'/}; tok=${tok//$'\e[201~'/}; tok=${tok//[[:space:]]/}
+  case "$tok" in
+    xoxb-*) echo "got a ${#tok}-character token, checking it with Slack" >&2 ;;
+    "") die "no token read; try: pbpaste | alfred login" ;;
+    *) die "expected a bot token starting with xoxb- (got ${#tok} characters starting ${tok:0:5})" ;;
+  esac
   ALFRED_SLACK_TOKEN=$tok api auth.test '{}' >/dev/null
 
   if [ "$(uname)" = Darwin ]; then
@@ -72,10 +85,14 @@ login() {
     (umask 077; printf '%s\n' "$tok" >"$dir/token")
   fi
 
-  user=$(cat "$dir/dm-user" 2>/dev/null || true)
-  printf 'Your Slack member ID, for alfred dm [%s]: ' "${user:-none}" >&2
-  read -r reply
-  user=${reply:-$user}
+  if [ -z "$user" ]; then
+    user=$(cat "$dir/dm-user" 2>/dev/null || true)
+    if [ -t 0 ]; then
+      printf 'Your Slack member ID, for alfred dm [%s]: ' "${user:-none}" >&2
+      read -r reply || true
+      user=${reply:-$user}
+    fi
+  fi
   if [ -n "$user" ]; then
     mkdir -p "$dir"
     printf '%s\n' "$user" >"$dir/dm-user"
@@ -107,7 +124,7 @@ cmd=${1:-}
 [ $# -gt 0 ] && shift
 thread=""
 case "$cmd" in
-  login) login ;;
+  login) login "$@" ;;
   whoami) whoami ;;
   dm | post)
     if [ "$cmd" = dm ]; then
