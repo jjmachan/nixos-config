@@ -42,7 +42,8 @@ One flake for jjmachan's machines: the nixbox (NixOS, x86_64-linux, hostname "ni
 - `nvim/` — LazyVim-based Neovim config with Python support, DAP debugging, diffview, git-blame, markview, jupytext, zellij-navigator plugins
 - `herdr/config.toml` — herdr (primary multiplexer) config; only this file is linked, `~/.config/herdr` stays a real dir for herdr's logs/sockets/session state
 - `herdr-plugins/worktrunk/` — herdr plugin, registered by a `home.activation` step via `herdr plugin link` against the repo path (not the store)
-- `bin/` — `herdr-jump`, `wt-clone`, `wt-init`, linked into `~/.local/bin` (on `home.sessionPath`)
+- `bin/` — `herdr-jump`, `wt-clone`, `wt-init`, `alfred`, linked into `~/.local/bin` (on `home.sessionPath`)
+- `claude/skills/alfred/` — Claude Code skill: agents post to work Slack as the Alfred bot via `alfred`, never as jjmachan (docs/alfred.md). Store copy at `~/.claude/skills/alfred`, so edits need a switch
 - `ghostty/config` — terminal config (tokyonight)
 - `rex/init.lua` — Rex (Mac terminal multiplexer app) key bindings: alt keys for panes and tabs, Rex defaults for the rest. Linked to the checkout on the Mac, so edits go live with Reload Config in Rex; check with `REX_CONFIG=dotfiles/rex/init.lua rex config check`
 - `zellij/config.kdl` — Terminal multiplexer config, kept as a fallback to herdr (default mode: locked)

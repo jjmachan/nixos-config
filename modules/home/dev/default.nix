@@ -62,12 +62,17 @@ in {
     '';
 
     # Helper scripts: herdr-jump (prefix+j popup), wt-clone / wt-init (worktrunk
-    # bare-repo layout)
+    # bare-repo layout), alfred (post to work Slack as the Alfred bot)
     home.file.".local/bin" = {
       source = ../../../dotfiles/bin;
       recursive = true;
     };
     home.sessionPath = [ "$HOME/.local/bin" ];
+
+    # Claude Code's alfred skill: agents message Slack as Alfred, never as you
+    # (docs/alfred.md). Only this skill; the rest of ~/.claude/skills is
+    # managed elsewhere.
+    home.file.".claude/skills/alfred".source = ../../../dotfiles/claude/skills/alfred;
 
     # Zsh
     programs.zsh = {
