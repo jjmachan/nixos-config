@@ -39,21 +39,30 @@ token() {
 }
 
 # api METHOD JSON -> response JSON; dies with Slack's error on failure.
+# api METHOD -G KEY=VALUE... sends query arguments instead, for the read
+# methods (chat.getPermalink) that don't take JSON.
 api() {
-  local tok res
+  local method=$1 tok res
+  shift
   tok=$(token) || exit 1
-  res=$(curl -sS -X POST "https://slack.com/api/$1" \
-    -H "Authorization: Bearer $tok" \
-    -H 'Content-Type: application/json; charset=utf-8' \
-    --data "$2") || die "$1: request failed"
+  if [ "${1:-}" = -G ]; then
+    local args=(-G) kv
+    shift
+    for kv; do args+=(--data-urlencode "$kv"); done
+    set -- "${args[@]}"
+  else
+    set -- -X POST -H 'Content-Type: application/json; charset=utf-8' --data "$1"
+  fi
+  res=$(curl -sS "https://slack.com/api/$method" -H "Authorization: Bearer $tok" "$@") \
+    || die "$method: request failed"
   if [ "$(jq -r .ok <<<"$res")" != true ]; then
     local err
     err=$(jq -r '.error // "unknown error"' <<<"$res")
     case "$err" in
-      not_in_channel) die "$1: Alfred isn't in that channel; invite @Alfred there first" ;;
-      channel_not_found) die "$1: channel not found; use the channel ID (C…) for private channels" ;;
-      missing_scope) die "$1: the Alfred app needs scope $(jq -r .needed <<<"$res"); add it and reinstall" ;;
-      *) die "$1: $err" ;;
+      not_in_channel) die "$method: Alfred isn't in that channel; invite @Alfred there first" ;;
+      channel_not_found) die "$method: channel not found; use the channel ID (C…) for private channels" ;;
+      missing_scope) die "$method: the Alfred app needs scope $(jq -r .needed <<<"$res"); add it and reinstall" ;;
+      *) die "$method: $err" ;;
     esac
   fi
   printf '%s' "$res"
@@ -116,8 +125,7 @@ send() {
   channel=$(jq -r .channel <<<"$res")
   ts=$(jq -r .ts <<<"$res")
   echo "channel=$channel ts=$ts"
-  api chat.getPermalink "$(jq -n --arg c "$channel" --arg t "$ts" '{channel: $c, message_ts: $t}')" \
-    | jq -r .permalink 2>/dev/null || true
+  api chat.getPermalink -G "channel=$channel" "message_ts=$ts" | jq -r .permalink || true
 }
 
 cmd=${1:-}
