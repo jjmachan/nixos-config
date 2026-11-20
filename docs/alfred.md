@@ -33,10 +33,10 @@ a hidden prompt:
 
 ```sh
 # On the Mac, with the token on the clipboard:
-pbpaste | alfred login U06LQUAFX1R
+pbpaste | alfred login U…
 
 # The nixbox, from the Mac's Keychain:
-security find-generic-password -s alfred-slack -w | ssh nixbox '~/.local/bin/alfred login U06LQUAFX1R'
+security find-generic-password -s alfred-slack -w | ssh nixbox '~/.local/bin/alfred login U…'
 
 alfred whoami    # Alfred in <workspace>
 ```
